@@ -30,7 +30,8 @@ class ReportGenerator:
         
         # Add safety note to diagnoses based on conflicts
         for d in diagnoses:
-            d.treatment_considerations.append(f"The evidence supports considering {d.diagnosis} as part of the differential diagnosis.")
+            if not (context.hypertension_scope and context.missing_information):
+                d.treatment_considerations.append(f"The evidence supports considering {d.diagnosis} as part of the differential diagnosis.")
             for c in conflicts:
                 if d.diagnosis in c.get("description", ""):
                     d.safety_notes.append(f"SAFETY WARNING: {c.get('description')}")

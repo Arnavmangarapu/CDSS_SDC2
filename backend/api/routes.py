@@ -105,6 +105,7 @@ def analyze_case(request: AnalyzeRequest):
         
         # 5. Clinical Fusion
         diagnoses, missing_info, tests = fusion.fuse(context, retrieval_results, ranked_evidence, conflicts)
+        missing_info = list(dict.fromkeys(context.missing_information + missing_info))
         
         # 6. Evaluate Confidence
         conf_score, action = confidence_evaluator.evaluate(diagnoses, conflicts, missing_info)
@@ -116,9 +117,10 @@ def analyze_case(request: AnalyzeRequest):
             
             context = retry_agent.expand_context(context)
             
-            # Route optimized query + feedback back to Clarifier Agent
-            new_case_text = f"{context.expanded_query}\n\n{feedback}"
-            context = clarifier.process(new_case_text)
+            # Keep extracted patient facts anchored to the original case, not generated feedback.
+            expanded_query = context.expanded_query
+            context = clarifier.process(request.case_text)
+            context.expanded_query = f"{expanded_query}\n\n{feedback}"
             
             attempt += 1
         else:
@@ -139,12 +141,12 @@ def analyze_case(request: AnalyzeRequest):
     )
     
     return {
-        "patient_context": context.dict(),
+        "patient_context": context.model_dump(),
         "retrieval": {
             "graph_candidates": len(retrieval_results.graph_results.candidate_diseases),
             "vector_items": len(retrieval_results.vector_results.evidence_items),
             "drug_safety_matches": len(retrieval_results.drug_safety_results),
             "authoritative_passages": len(retrieval_results.source_passages),
         },
-        "report": final_report.dict()
+        "report": final_report.model_dump()
     }

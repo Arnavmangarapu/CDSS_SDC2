@@ -55,6 +55,14 @@ class ClinicalFusion:
             return [fallback_diagnosis], ["Missing LLM Context"], ["Run API troubleshooting"]
 
         diagnoses = [DiagnosisCandidate(**d) for d in parsed.get("diagnoses", [])]
+        if context.hypertension_scope and context.missing_information:
+            for diagnosis in diagnoses:
+                if diagnosis.treatment_considerations:
+                    diagnosis.treatment_considerations = []
+                    diagnosis.safety_notes.append(
+                        "Treatment options withheld pending clinician confirmation of: "
+                        + "; ".join(context.missing_information)
+                    )
         missing = parsed.get("missing_information", [])
         inv = parsed.get("recommended_investigations", [])
         
@@ -67,7 +75,14 @@ class ClinicalFusion:
         prompt += f"Raw Input: {context.raw_input}\n"
         prompt += f"Symptoms: {[s.normalized_name or s.text for s in context.symptoms]}\n"
         prompt += f"Conditions: {[s.normalized_name or s.text for s in context.known_conditions]}\n"
-        prompt += f"Medications: {[s.normalized_name or s.text for s in context.medications]}\n\n"
+        prompt += f"Current medications: {[s.normalized_name or s.text for s in context.medications]}\n"
+        prompt += f"Medication list status: {context.medication_list_status}\n"
+        prompt += f"Allergy status: {context.allergy_status}; reported allergies: {[s.text for s in context.allergies]}\n"
+        prompt += f"Blood pressure readings: {[reading.model_dump() for reading in context.blood_pressure_readings]}\n"
+        prompt += f"Hypertension explicitly confirmed: {context.hypertension_confirmed}\n"
+        prompt += f"Pregnancy status: {context.pregnancy_status}\n"
+        prompt += f"Reported labs: {context.labs}\n"
+        prompt += f"Missing patient information: {context.missing_information}\n\n"
         
         prompt += "### Retrieved Evidence (Graph, Vector & Web)\n"
         for ev in ranked_evidence[:10]:  # Limit to top 10

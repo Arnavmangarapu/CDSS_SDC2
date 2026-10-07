@@ -6,7 +6,7 @@ Research prototype for a clinician-facing differential diagnosis and evidence re
 
 Clinical case → clarifier and entity linker → retrieval orchestrator (Neo4j graph, Qdrant vectors, DrugCentral, web discovery) → evidence ranker → conflict detector → clinical fusion → confidence evaluator or retry → report.
 
-Versioned guideline and drug-label retrieval is implemented for a narrow adult hypertension source set. Claim generation, clinical verification, and medication-safety decisions are still planned. See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for completion gates and progress, and [datasets/DATASET_GUIDE.md](datasets/DATASET_GUIDE.md) for the local data inventory.
+Versioned guideline and drug-label retrieval plus traceable patient-context extraction are implemented for a narrow adult hypertension source set. Claim generation, clinical verification, and medication-safety decisions are still planned. See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for completion gates and progress, and [datasets/DATASET_GUIDE.md](datasets/DATASET_GUIDE.md) for the local data inventory.
 
 ## Run locally
 
