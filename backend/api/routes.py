@@ -104,8 +104,9 @@ def analyze_case(request: AnalyzeRequest):
         conflicts = detector.detect(context, retrieval_results, ranked_evidence)
         
         # 5. Clinical Fusion
-        diagnoses, missing_info, tests = fusion.fuse(context, retrieval_results, ranked_evidence, conflicts)
-        missing_info = list(dict.fromkeys(context.missing_information + missing_info))
+        fusion_result = fusion.fuse(context, retrieval_results, ranked_evidence, conflicts)
+        diagnoses = fusion_result.diagnoses
+        missing_info = list(dict.fromkeys(context.missing_information + fusion_result.missing_information))
         
         # 6. Evaluate Confidence
         conf_score, action = confidence_evaluator.evaluate(diagnoses, conflicts, missing_info)
@@ -137,7 +138,9 @@ def analyze_case(request: AnalyzeRequest):
         limitations=["Local offline MVP execution. Not for clinical use."] + [
             f"Source retrieval unverified: {reason}"
             for reason in retrieval_results.source_retrieval_limitations
-        ]
+        ],
+        claims=fusion_result.claims,
+        source_passages=retrieval_results.source_passages,
     )
     
     return {

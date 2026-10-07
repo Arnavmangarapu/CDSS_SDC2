@@ -1,7 +1,7 @@
 from typing import List, Dict, Any
 from backend.schemas.patient import PatientContext
-from backend.schemas.evidence import EvidenceItem
-from backend.schemas.report import ClinicalReport, DiagnosisCandidate
+from backend.schemas.evidence import EvidenceItem, SourcePassage
+from backend.schemas.report import ClinicalClaim, ClinicalReport, DiagnosisCandidate
 
 class ReportGenerator:
     def generate(
@@ -12,7 +12,9 @@ class ReportGenerator:
         conflicts: List[Dict[str, Any]], 
         missing_info: List[str],
         confidence: float,
-        limitations: List[str]
+        limitations: List[str],
+        claims: List[ClinicalClaim] | None = None,
+        source_passages: List[SourcePassage] | None = None,
     ) -> ClinicalReport:
         """
         Constructs the final Clinical Report.
@@ -30,8 +32,6 @@ class ReportGenerator:
         
         # Add safety note to diagnoses based on conflicts
         for d in diagnoses:
-            if not (context.hypertension_scope and context.missing_information):
-                d.treatment_considerations.append(f"The evidence supports considering {d.diagnosis} as part of the differential diagnosis.")
             for c in conflicts:
                 if d.diagnosis in c.get("description", ""):
                     d.safety_notes.append(f"SAFETY WARNING: {c.get('description')}")
@@ -48,5 +48,7 @@ class ReportGenerator:
             conflicts=conflicts,
             overall_confidence=confidence,
             limitations=report_limitations,
-            references=evidence
+            references=evidence,
+            claims=claims or [],
+            source_passages=source_passages or [],
         )

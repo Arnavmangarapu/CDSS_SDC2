@@ -16,10 +16,13 @@ class ClinicalClaim(BaseModel):
     claim_type: ClaimType
     text: str = Field(min_length=1)
     status: ClaimStatus
+    applies_to: Optional[str] = None
     conditions: List[str] = Field(default_factory=list)
+    missing_checks: List[str] = Field(default_factory=list)
     supporting_evidence_ids: List[str] = Field(default_factory=list)
     conflicting_evidence_ids: List[str] = Field(default_factory=list)
     unverified_evidence_ids: List[str] = Field(default_factory=list)
+    rejected_evidence_ids: List[str] = Field(default_factory=list)
     unverified_reason: Optional[str] = None
 
     @field_validator("claim_id", "text")
@@ -50,7 +53,7 @@ class ClinicalClaim(BaseModel):
 class DiagnosisCandidate(BaseModel):
     diagnosis: str
     confidence: float
-    supporting_evidence_ids: List[str]
+    supporting_evidence_ids: List[str] = Field(default_factory=list)
     conflicting_evidence_ids: List[str] = Field(default_factory=list)
     recommended_tests: List[str] = Field(default_factory=list)
     treatment_considerations: List[str] = Field(default_factory=list)

@@ -1,7 +1,7 @@
 """Safety facts must remain explicit and traceable through extraction and retries."""
 
 from backend.agents.clarifier import ClinicalClarifier
-from backend.agents.fusion import ClinicalFusion
+from backend.agents.fusion import ClinicalFusion, FusionResult
 from backend.agents.report import ReportGenerator
 from backend.api import routes
 from backend.schemas.retrieval import GraphRetrievalResult, OrchestratorResult, VectorRetrievalResult
@@ -88,24 +88,31 @@ def test_missing_observations_are_not_assumed_normal():
     assert "Current medication list not supplied" not in context.missing_information
 
 
-def test_hypertension_treatment_option_is_withheld_when_required_facts_are_missing():
+def test_hypertension_treatment_stays_conditional_when_required_facts_are_missing():
     context = clarifier().process("A 55-year-old adult diagnosed with hypertension.")
     fusion = ClinicalFusion()
     fusion.llm.generate_json = lambda *args, **kwargs: {
         "diagnoses": [{"diagnosis": "Hypertension", "confidence": 0.5,
-                       "supporting_evidence_ids": [], "conflicting_evidence_ids": [],
-                       "recommended_tests": [], "treatment_considerations": ["Start amlodipine"],
-                       "safety_notes": []}],
-        "missing_information": [], "recommended_investigations": [],
+                       "treatment_considerations": ["Start amlodipine"]}],
+        "diagnostic_claims": [], "investigations_to_consider": [],
+        "treatment_options_if_confirmed": [{
+            "text": "Amlodipine may be discussed as a conditional option",
+            "applies_to": "Hypertension", "conditions": ["Diagnosis confirmed"],
+        }],
+        "missing_information": [],
     }
     retrieval = OrchestratorResult(graph_results=GraphRetrievalResult(candidate_diseases=[], paths=[]),
                                    vector_results=VectorRetrievalResult())
-    diagnoses, _, _ = fusion.fuse(context, retrieval, [], [])
-    assert diagnoses[0].treatment_considerations == []
-    assert "Treatment options withheld" in diagnoses[0].safety_notes[0]
-    assert "Allergy status not supplied" in diagnoses[0].safety_notes[0]
-    report = ReportGenerator().generate(context, diagnoses, [], [], context.missing_information, 0.5, [])
+    result = fusion.fuse(context, retrieval, [], [])
+    assert result.diagnoses[0].treatment_considerations == []
+    treatment = next(claim for claim in result.claims if claim.claim_type == "treatment")
+    assert treatment.status == "unverified"
+    assert "Allergy status not supplied" in treatment.missing_checks
+    assert "Diagnosis or condition confirmed: Hypertension" in treatment.conditions
+    report = ReportGenerator().generate(context, result.diagnoses, [], [], context.missing_information,
+                                        0.5, [], claims=result.claims)
     assert report.ranked_diagnoses[0].treatment_considerations == []
+    assert report.claims[0].status == "unverified"
 
 
 def test_unanchored_model_allergy_is_rejected_and_conflicting_allergy_is_visible():
@@ -139,7 +146,7 @@ def test_retry_preserves_original_patient_facts_and_report_missingness(monkeypat
 
     class Fusion:
         def fuse(self, *args):
-            return [], [], []
+            return FusionResult([], [], [], [])
 
     class Confidence:
         calls = 0
