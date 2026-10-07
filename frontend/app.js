@@ -8,20 +8,34 @@ document.getElementById('analyze-form').addEventListener('submit', async (event)
     spinner.classList.remove('hidden');
     button.querySelector('.btn-text').textContent = 'Analyzing...';
     document.getElementById('results-section').classList.add('hidden');
+    const errorPanel = document.getElementById('ui-error');
+    errorPanel.classList.add('hidden');
+    errorPanel.textContent = '';
+    let reportData;
     try {
         const response = await fetch('/analyze', {
             method: 'POST', headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({case_text: caseText}),
         });
         if (!response.ok) throw new Error('Analysis failed');
-        renderResults(await response.json());
+        reportData = await response.json();
     } catch (error) {
         console.error(error);
-        alert('The report could not be generated. Please try again.');
+        errorPanel.textContent = 'The analysis request failed. Please try again.';
+        errorPanel.classList.remove('hidden');
     } finally {
         button.disabled = false;
         spinner.classList.add('hidden');
         button.querySelector('.btn-text').textContent = 'Analyze Case';
+    }
+    if (!reportData) return;
+    try {
+        renderResults(reportData);
+    } catch (error) {
+        console.error(error);
+        document.getElementById('results-section').classList.add('hidden');
+        errorPanel.textContent = 'The analysis finished, but this page could not display the report. Refresh the page and try again.';
+        errorPanel.classList.remove('hidden');
     }
 });
 

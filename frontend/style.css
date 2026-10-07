@@ -353,6 +353,7 @@ textarea::placeholder {
 .review-section > p { line-height: 1.55; }
 .review-muted { color: #a8b7c9; font-size: 0.9rem; line-height: 1.55; }
 .review-label { color: #b7d6df; border: 1px solid #51717d; border-radius: 6px; padding: 0.4rem 0.65rem; font-size: 0.85rem; }
+.ui-error { border-left: 3px solid #de8274; background: #392726; color: #ffe3df; padding: 0.9rem 1rem; border-radius: 0 6px 6px 0; line-height: 1.5; }
 .review-list { padding-left: 1.2rem; margin-top: 0.35rem; line-height: 1.55; }
 .review-list li { margin: 0.2rem 0; overflow-wrap: anywhere; }
 .review-group { margin-top: 0.8rem; }

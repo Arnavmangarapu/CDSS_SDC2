@@ -9,10 +9,20 @@ app = FastAPI(
 
 from fastapi.staticfiles import StaticFiles
 
+
+class FreshFrontendFiles(StaticFiles):
+    """Avoid mixing a cached UI script with newly deployed report markup."""
+
+    async def get_response(self, path, scope):
+        response = await super().get_response(path, scope)
+        response.headers["Cache-Control"] = "no-store, max-age=0"
+        return response
+
+
 app.include_router(router)
 
 # Mount the frontend UI
-app.mount("/ui", StaticFiles(directory="frontend", html=True), name="frontend")
+app.mount("/ui", FreshFrontendFiles(directory="frontend", html=True), name="frontend")
 
 if __name__ == "__main__":
     import uvicorn

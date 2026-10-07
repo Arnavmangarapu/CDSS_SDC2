@@ -24,6 +24,8 @@ The API exposes `/health` and `/analyze`; the existing frontend is served at `/u
 
 `/analyze` retains `ranked_diagnoses`, `overall_confidence` (an uncalibrated legacy retry score), and `claims`. The report also includes `differential` entries linked by claim ID, `unassigned_diagnostic_claim_ids`, `investigation_claim_ids`, `treatment_claim_ids`, `medication_safety`, `evidence_completeness`, and `verification_failures`. Claims and source passages remain the authoritative detail records for these IDs. The UI presents missing allergy and medication information as unknown, never as a safety clearance.
 
+The `/ui` HTML, script, and stylesheet are served with `Cache-Control: no-store`; the page also uses versioned asset URLs. This prevents a browser from combining an old report script with newer markup after an update. If an existing tab still shows the legacy percentage badge, reload that tab once.
+
 ## Pinned authoritative sources
 
 The source manifest is [sources/hypertension/manifest.json](sources/hypertension/manifest.json). It pins the official NICE NG136 recommendations page and one DailyMed amlodipine label by version and SHA-256. The raw documents are stored under ignored `datasets/authoritative/` and need an independent clinician review before clinical use.
