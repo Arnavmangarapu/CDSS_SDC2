@@ -100,11 +100,6 @@ function renderResults(data) {
             card.className = 'diag-card glass-panel animate-up';
             card.style.animationDelay = `${index * 0.1}s`;
 
-            // Confidence class
-            let confClass = 'conf-low';
-            if (d.confidence >= 0.75) confClass = 'conf-high';
-            else if (d.confidence >= 0.5) confClass = 'conf-med';
-
             let safetyHtml = '';
             if (d.safety_notes && d.safety_notes.length > 0) {
                 d.safety_notes.forEach(note => {
@@ -122,7 +117,7 @@ function renderResults(data) {
             card.innerHTML = `
                 <div class="diag-header">
                     <div class="diag-title">${d.diagnosis}</div>
-                    <div class="conf-badge ${confClass}">${(d.confidence * 100).toFixed(0)}% Conf</div>
+                    <div class="conf-badge conf-low">Uncalibrated</div>
                 </div>
                 <div class="diag-body">
                     ${treatmentsHtml}

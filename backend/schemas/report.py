@@ -71,6 +71,9 @@ class ClinicalReport(BaseModel):
     references: List[EvidenceItem]
     claims: List[ClinicalClaim] = Field(default_factory=list)
     source_passages: List[SourcePassage] = Field(default_factory=list)
+    confidence_calibrated: bool = False
+    evidence_completeness: Dict[str, int] = Field(default_factory=dict)
+    verification_failures: List[str] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def validate_claim_provenance(self) -> "ClinicalReport":

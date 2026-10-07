@@ -32,6 +32,7 @@ from backend.agents.fusion import ClinicalFusion
 from backend.agents.confidence import ConfidenceEvaluator
 from backend.agents.adaptive_retry import AdaptiveRetry
 from backend.agents.report import ReportGenerator
+from backend.services.claim_verifier import ClaimVerifier
 
 # Global state for lazy initialization
 pipeline_state = {}
@@ -64,6 +65,7 @@ def get_pipeline():
         pipeline_state['ranker'] = EvidenceRanker()
         pipeline_state['detector'] = ConflictDetector()
         pipeline_state['fusion'] = ClinicalFusion()
+        pipeline_state['verifier'] = ClaimVerifier()
         pipeline_state['confidence'] = ConfidenceEvaluator()
         pipeline_state['retry'] = AdaptiveRetry(max_retries=2)
         pipeline_state['report'] = ReportGenerator()
@@ -81,6 +83,7 @@ def analyze_case(request: AnalyzeRequest):
     ranker = services['ranker']
     detector = services['detector']
     fusion = services['fusion']
+    verifier = services.get('verifier') or ClaimVerifier()
     confidence_evaluator = services['confidence']
     retry_agent = services['retry']
     report_generator = services['report']
@@ -107,8 +110,31 @@ def analyze_case(request: AnalyzeRequest):
         fusion_result = fusion.fuse(context, retrieval_results, ranked_evidence, conflicts)
         diagnoses = fusion_result.diagnoses
         missing_info = list(dict.fromkeys(context.missing_information + fusion_result.missing_information))
+
+        # 6. Independently verify citations and apply label-backed safety rules.
+        verification = verifier.verify(context, fusion_result.claims, retrieval_results.source_passages)
+        safety_conflicts, safety_claims = detector.detect_medication_safety(
+            context, verification.trusted_passages, verification.claims
+        ) if hasattr(detector, 'detect_medication_safety') else ([], [])
+        conflicts.extend(safety_conflicts)
+        verification.claims.extend(safety_claims)
+        verification.evidence_completeness['supported_claims'] = sum(
+            claim.status == 'supported' for claim in verification.claims
+        )
+        verification.evidence_completeness['conflicting_claims'] = sum(
+            claim.status == 'conflicting' for claim in verification.claims
+        )
+        verification.evidence_completeness['unverified_claims'] = sum(
+            claim.status == 'unverified' for claim in verification.claims
+        )
+        verification.evidence_completeness['claim_count'] = len(verification.claims)
+        if safety_conflicts:
+            missing_info = list(dict.fromkeys(missing_info + [
+                item['description'] for item in safety_conflicts
+                if item['verification_status'] == 'unverified'
+            ]))
         
-        # 6. Evaluate Confidence
+        # 7. Preserve the legacy retry heuristic; this is not a probability.
         conf_score, action = confidence_evaluator.evaluate(diagnoses, conflicts, missing_info)
         
         if retry_agent.should_retry(attempt, action):
@@ -127,7 +153,7 @@ def analyze_case(request: AnalyzeRequest):
         else:
             break
             
-    # 7. Generate Report
+    # 8. Generate Report
     final_report = report_generator.generate(
         context=context,
         diagnoses=diagnoses,
@@ -135,12 +161,15 @@ def analyze_case(request: AnalyzeRequest):
         conflicts=conflicts,
         missing_info=missing_info,
         confidence=conf_score,
-        limitations=["Local offline MVP execution. Not for clinical use."] + [
+        limitations=["Local offline MVP execution. Not for clinical use.",
+                     "Legacy confidence values are uncalibrated retry heuristics, not diagnostic probabilities."] + [
             f"Source retrieval unverified: {reason}"
             for reason in retrieval_results.source_retrieval_limitations
-        ],
-        claims=fusion_result.claims,
+        ] + verification.failures,
+        claims=verification.claims,
         source_passages=retrieval_results.source_passages,
+        evidence_completeness=verification.evidence_completeness,
+        verification_failures=verification.failures,
     )
     
     return {

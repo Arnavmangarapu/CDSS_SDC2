@@ -4,9 +4,9 @@ Research prototype for a clinician-facing differential diagnosis and evidence re
 
 ## Current architecture
 
-Clinical case → clarifier and entity linker → retrieval orchestrator (Neo4j graph, Qdrant vectors, DrugCentral, web discovery) → evidence ranker → conflict detector → clinical fusion → confidence evaluator or retry → report.
+Clinical case → clarifier and entity linker → retrieval orchestrator (Neo4j graph, Qdrant vectors, DrugCentral, web discovery) → evidence ranker → conflict detector → clinical fusion → claim verifier and label safety checks → confidence retry heuristic → report.
 
-Versioned guideline and drug-label retrieval, traceable patient-context extraction, and conditional claim proposals are implemented for a narrow adult hypertension source set. Claims remain unverified until the independent checks in the next step; medication-safety decisions and UI presentation are still planned. See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for completion gates and progress, and [datasets/DATASET_GUIDE.md](datasets/DATASET_GUIDE.md) for the local data inventory.
+Versioned guideline and drug-label retrieval, traceable patient-context extraction, conditional claim proposals, and a fail-closed verification gate are implemented for a narrow adult hypertension source set. Candidate claims remain unverified unless a narrow pinned-label safety rule applies. The current UI hides the uncalibrated confidence percentage; the full claim and citation presentation is planned for Step 7. See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for completion gates and progress, and [datasets/DATASET_GUIDE.md](datasets/DATASET_GUIDE.md) for the local data inventory.
 
 ## Run locally
 

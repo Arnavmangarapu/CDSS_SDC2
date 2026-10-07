@@ -15,6 +15,8 @@ class ReportGenerator:
         limitations: List[str],
         claims: List[ClinicalClaim] | None = None,
         source_passages: List[SourcePassage] | None = None,
+        evidence_completeness: Dict[str, int] | None = None,
+        verification_failures: List[str] | None = None,
     ) -> ClinicalReport:
         """
         Constructs the final Clinical Report.
@@ -51,4 +53,6 @@ class ReportGenerator:
             references=evidence,
             claims=claims or [],
             source_passages=source_passages or [],
+            evidence_completeness=evidence_completeness or {},
+            verification_failures=verification_failures or [],
         )
