@@ -1,0 +1,146 @@
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+from typing import Dict, Any
+
+from backend.schemas.patient import PatientContext
+from backend.schemas.report import ClinicalReport, DiagnosisCandidate
+from backend.schemas.evidence import EvidenceItem
+
+# We will inject services in the future, for now we instantiate or mock them in the route or main
+
+router = APIRouter()
+
+class AnalyzeRequest(BaseModel):
+    case_text: str
+
+@router.get("/health")
+def health_check():
+    return {"status": "ok", "service": "CDSS Backend"}
+
+import os
+from backend.services.ontology_parser import OntologyParser
+from backend.services.entity_linker import EntityLinker
+from backend.agents.clarifier import ClinicalClarifier
+from backend.services.graph_retriever import GraphRetriever
+from backend.services.vector_retriever import VectorRetriever
+from backend.services.drugcentral import DrugCentralService
+from backend.services.evidence_scanner import EvidenceScannerAgent
+from backend.services.orchestrator import RetrievalOrchestrator
+from backend.agents.evidence_ranker import EvidenceRanker
+from backend.agents.conflict_detector import ConflictDetector
+from backend.agents.fusion import ClinicalFusion
+from backend.agents.confidence import ConfidenceEvaluator
+from backend.agents.adaptive_retry import AdaptiveRetry
+from backend.agents.report import ReportGenerator
+
+# Global state for lazy initialization
+pipeline_state = {}
+
+def get_pipeline():
+    if not pipeline_state:
+        print("Initializing CDSS Pipeline Services...")
+        
+        # Paths
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        hpo_path = os.path.join(base_dir, "datasets", "ontologies", "hpo", "hp.obo")
+        mondo_path = os.path.join(base_dir, "datasets", "ontologies", "mondo", "mondo.obo")
+        kg_path = os.path.join(base_dir, "datasets", "kg.csv")
+        drugcentral_dir = os.path.join(base_dir, "datasets", "drugcentral")
+        drug_csv_path = os.path.join(drugcentral_dir, "structures.smiles.tsv")
+        
+        # 1. Init Ontologies & Linker
+        parser = OntologyParser(hpo_path, mondo_path, drug_csv_path)
+        parser.parse_all()
+        linker = EntityLinker(parser.lookup_table)
+        
+        # 2. Init Retrievers
+        graph_retriever = GraphRetriever(kg_path)
+        vector_retriever = VectorRetriever() # We assume it's unpopulated for now unless build_index is called
+        drug_service = DrugCentralService(drugcentral_dir)
+        evidence_scanner = EvidenceScannerAgent()
+        
+        pipeline_state['clarifier'] = ClinicalClarifier(linker)
+        pipeline_state['orchestrator'] = RetrievalOrchestrator(graph_retriever, vector_retriever, drug_service, evidence_scanner)
+        pipeline_state['ranker'] = EvidenceRanker()
+        pipeline_state['detector'] = ConflictDetector()
+        pipeline_state['fusion'] = ClinicalFusion()
+        pipeline_state['confidence'] = ConfidenceEvaluator()
+        pipeline_state['retry'] = AdaptiveRetry(max_retries=2)
+        pipeline_state['report'] = ReportGenerator()
+        
+        print("Pipeline initialization complete.")
+    
+    return pipeline_state
+
+@router.post("/analyze")
+def analyze_case(request: AnalyzeRequest):
+    services = get_pipeline()
+    
+    clarifier = services['clarifier']
+    orchestrator = services['orchestrator']
+    ranker = services['ranker']
+    detector = services['detector']
+    fusion = services['fusion']
+    confidence_evaluator = services['confidence']
+    retry_agent = services['retry']
+    report_generator = services['report']
+    
+    # 1. Clarify
+    context = clarifier.process(request.case_text)
+    
+    attempt = 0
+    action = "retry"
+    
+    while action == "retry" and attempt <= retry_agent.max_retries:
+        print(f"--- Analysis Attempt {attempt + 1} ---")
+        
+        # 2. Retrieve
+        retrieval_results = orchestrator.retrieve(context)
+        
+        # 3. Rank Evidence
+        ranked_evidence = ranker.rank(context, retrieval_results)
+        
+        # 4. Detect Conflicts
+        conflicts = detector.detect(context, retrieval_results, ranked_evidence)
+        
+        # 5. Clinical Fusion
+        diagnoses, missing_info, tests = fusion.fuse(context, retrieval_results, ranked_evidence, conflicts)
+        
+        # 6. Evaluate Confidence
+        conf_score, action = confidence_evaluator.evaluate(diagnoses, conflicts, missing_info)
+        
+        if retry_agent.should_retry(attempt, action):
+            print("Confidence too low, executing adaptive retry...")
+            feedback = retry_agent.generate_feedback(context, conflicts)
+            print(f"Optimizer Feedback: {feedback}")
+            
+            context = retry_agent.expand_context(context)
+            
+            # Route optimized query + feedback back to Clarifier Agent
+            new_case_text = f"{context.expanded_query}\n\n{feedback}"
+            context = clarifier.process(new_case_text)
+            
+            attempt += 1
+        else:
+            break
+            
+    # 7. Generate Report
+    final_report = report_generator.generate(
+        context=context,
+        diagnoses=diagnoses,
+        evidence=ranked_evidence,
+        conflicts=conflicts,
+        missing_info=missing_info,
+        confidence=conf_score,
+        limitations=["Local offline MVP execution. Not for clinical use."]
+    )
+    
+    return {
+        "patient_context": context.dict(),
+        "retrieval": {
+            "graph_candidates": len(retrieval_results.graph_results.candidate_diseases),
+            "vector_items": len(retrieval_results.vector_results.evidence_items),
+            "drug_safety_matches": len(retrieval_results.drug_safety_results)
+        },
+        "report": final_report.dict()
+    }

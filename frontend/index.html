@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CDSS Clinical Reasoning</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar for Context -->
+        <aside class="sidebar glass-panel">
+            <div class="logo">
+                <div class="logo-icon"></div>
+                <h2>NeuroMed AI</h2>
+            </div>
+            
+            <div class="context-panel">
+                <h3>Patient Context</h3>
+                <div id="patient-context" class="empty-state">
+                    Submit a case to view extracted patient context.
+                </div>
+            </div>
+            
+            <div class="context-panel">
+                <h3>Missing Information</h3>
+                <ul id="missing-info-list" class="empty-state-list">
+                    <li>No missing info yet.</li>
+                </ul>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header>
+                <h1>Clinical Decision Support System</h1>
+                <p>Enter a clinical case to generate an AI-assisted differential diagnosis</p>
+            </header>
+
+            <section class="input-section glass-panel">
+                <form id="analyze-form">
+                    <textarea 
+                        id="case-input" 
+                        placeholder="e.g., 58-year-old man presents with sharp, crushing chest pain radiating to the left arm for the past 2 hours. He has a history of type 2 diabetes and hypertension. He is currently taking lisinopril and metformin. Vitals: BP 160/90, HR 110, SpO2 96% on room air." 
+                        required
+                    ></textarea>
+                    <div class="form-actions">
+                        <button type="submit" id="submit-btn" class="glow-btn">
+                            <span class="btn-text">Analyze Case</span>
+                            <div class="spinner hidden" id="loading-spinner"></div>
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="results-section hidden" id="results-section">
+                <div class="results-header">
+                    <h2>Differential Diagnoses</h2>
+                    <div class="confidence-badge" id="overall-confidence"></div>
+                </div>
+                
+                <div id="diagnoses-container" class="diagnoses-grid">
+                    <!-- Cards will be injected here by JS -->
+                </div>
+
+                <div class="investigations-panel glass-panel mt-4 hidden" id="investigations-panel">
+                    <h3>Recommended Investigations</h3>
+                    <ul id="investigations-list"></ul>
+                </div>
+
+                <div class="disclaimer mt-4">
+                    <strong>Disclaimer:</strong> <span id="report-disclaimer">This is a research prototype.</span>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
