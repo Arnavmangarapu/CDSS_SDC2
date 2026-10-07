@@ -16,3 +16,4 @@ sentence-transformers
 pytest
 openai
 requests
+beautifulsoup4

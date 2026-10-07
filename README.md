@@ -6,7 +6,7 @@ Research prototype for a clinician-facing differential diagnosis and evidence re
 
 Clinical case → clarifier and entity linker → retrieval orchestrator (Neo4j graph, Qdrant vectors, DrugCentral, web discovery) → evidence ranker → conflict detector → clinical fusion → confidence evaluator or retry → report.
 
-The proposed claim-linked guideline and medication-safety features are **planned**, not yet implemented. See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for the stepwise design, completion gates, Git checkpoints, and current progress. See [datasets/DATASET_GUIDE.md](datasets/DATASET_GUIDE.md) for the local data inventory.
+Versioned guideline and drug-label retrieval is implemented for a narrow adult hypertension source set. Claim generation, clinical verification, and medication-safety decisions are still planned. See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for completion gates and progress, and [datasets/DATASET_GUIDE.md](datasets/DATASET_GUIDE.md) for the local data inventory.
 
 ## Run locally
 
@@ -21,6 +21,18 @@ python -m backend.main
 ```
 
 The API exposes `/health` and `/analyze`; the existing frontend is served at `/ui` on port 8000. Large datasets and database contents are local and excluded from Git. Copy `.env.example` to `.env` and supply keys in `.env`; never commit credentials.
+
+## Pinned authoritative sources
+
+The source manifest is [sources/hypertension/manifest.json](sources/hypertension/manifest.json). It pins the official NICE NG136 recommendations page and one DailyMed amlodipine label by version and SHA-256. The raw documents are stored under ignored `datasets/authoritative/` and need an independent clinician review before clinical use.
+
+```bash
+python -m ingestion.authoritative_sources fetch
+python -m ingestion.authoritative_sources verify
+python -m ingestion.authoritative_sources ingest
+```
+
+`fetch` refuses changed remote bytes; review and version the manifest before ingesting a changed source. `ingest` replaces the two dedicated Qdrant collections and leaves the textbook collection alone. Retrieved source passages carry exact section names, stable IDs, URL, version, and checksum. Serper snippets remain discovery leads and are not accepted as citation passages.
 
 ## Recovery checkpoint
 

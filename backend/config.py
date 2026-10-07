@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     VECTOR_COLLECTION_TEXTBOOKS: str = "medical_textbooks"
     VECTOR_COLLECTION_PUBMEDQA: str = "pubmedqa_contexts"
     VECTOR_COLLECTION_MEDQA: str = "medqa_train"
+    VECTOR_COLLECTION_GUIDELINES: str = "clinical_guidelines"
+    VECTOR_COLLECTION_DRUG_LABELS: str = "clinical_drug_labels"
 
     OPENROUTER_API_KEY: str = ""
     GEMINI_API_KEY: str = ""

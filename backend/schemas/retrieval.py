@@ -23,3 +23,4 @@ class OrchestratorResult(BaseModel):
     drug_safety_results: List[Dict[str, Any]] = []
     web_search_results: List[Dict[str, Any]] = []
     source_passages: List[SourcePassage] = Field(default_factory=list)
+    source_retrieval_limitations: List[str] = Field(default_factory=list)

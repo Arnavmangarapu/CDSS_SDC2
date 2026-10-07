@@ -29,6 +29,7 @@ class RetrievalOrchestrator:
         print("Orchestrator: Initiating Vector Retrieval...")
         vector_items = self.vector_retriever.retrieve(context)
         vector_results = VectorRetrievalResult(evidence_items=vector_items)
+        source_passages, source_limitations = self.vector_retriever.retrieve_authoritative(context)
         
         print("Orchestrator: Initiating Drug Safety Retrieval...")
         drug_safety_results = []
@@ -49,5 +50,7 @@ class RetrievalOrchestrator:
             graph_results=graph_results,
             vector_results=vector_results,
             drug_safety_results=drug_safety_results,
-            web_search_results=web_search_results
+            web_search_results=web_search_results,
+            source_passages=source_passages,
+            source_retrieval_limitations=source_limitations,
         )

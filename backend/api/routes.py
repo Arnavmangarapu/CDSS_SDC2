@@ -132,7 +132,10 @@ def analyze_case(request: AnalyzeRequest):
         conflicts=conflicts,
         missing_info=missing_info,
         confidence=conf_score,
-        limitations=["Local offline MVP execution. Not for clinical use."]
+        limitations=["Local offline MVP execution. Not for clinical use."] + [
+            f"Source retrieval unverified: {reason}"
+            for reason in retrieval_results.source_retrieval_limitations
+        ]
     )
     
     return {
@@ -140,7 +143,8 @@ def analyze_case(request: AnalyzeRequest):
         "retrieval": {
             "graph_candidates": len(retrieval_results.graph_results.candidate_diseases),
             "vector_items": len(retrieval_results.vector_results.evidence_items),
-            "drug_safety_matches": len(retrieval_results.drug_safety_results)
+            "drug_safety_matches": len(retrieval_results.drug_safety_results),
+            "authoritative_passages": len(retrieval_results.source_passages),
         },
         "report": final_report.dict()
     }
