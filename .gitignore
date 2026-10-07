@@ -23,6 +23,7 @@ neo4j/logs/
 *.gz
 data/processed/
 artifacts/
+evaluation/runs/
 
 # Local logs, credentials, and large reference binaries.
 API keys for Evidence based Scanner.md

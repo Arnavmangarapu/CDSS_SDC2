@@ -26,6 +26,10 @@ The API exposes `/health` and `/analyze`; the existing frontend is served at `/u
 
 The `/ui` HTML, script, and stylesheet are served with `Cache-Control: no-store`; the page also uses versioned asset URLs. This prevents a browser from combining an old report script with newer markup after an update. If an existing tab still shows the legacy percentage badge, reload that tab once.
 
+## Synthetic evaluation
+
+Run `python -m evaluation.run --output evaluation/runs/full-001` to compare LLM-only, text-RAG, and graph-plus-text modes on the frozen synthetic cases. The command writes metrics, case-level errors, provider and source provenance, and a blinded review packet. See [evaluation/README.md](evaluation/README.md) for metric definitions and limitations. These fixtures and scores do not establish clinical diagnostic accuracy or safety; independent clinician review is pending.
+
 ## Pinned authoritative sources
 
 The source manifest is [sources/hypertension/manifest.json](sources/hypertension/manifest.json). It pins the official NICE NG136 recommendations page and one DailyMed amlodipine label by version and SHA-256. The raw documents are stored under ignored `datasets/authoritative/` and need an independent clinician review before clinical use.

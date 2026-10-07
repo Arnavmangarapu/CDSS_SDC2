@@ -9,7 +9,17 @@ from backend.config import settings
 
 
 class LLMFallback:
+    MODEL_IDS = {
+        "Gemini Flash Lite": "gemini-3.5-flash-lite",
+        "Gemini Flash": "gemini-3.8-flash",
+        "Cohere": "command-r-plus-08-2024",
+        "Mistral": "mistral-small-latest",
+        "OpenRouter": "openrouter/free (underlying model varies)",
+    }
+
     def __init__(self):
+        self.last_provider: str | None = None
+        self.last_model: str | None = None
         self.providers = (
             ("Gemini Flash Lite", settings.GEMINI_API_KEY, self._gemini_lite),
             ("Gemini Flash", settings.GEMINI_API_KEY, self._gemini_flash),
@@ -25,6 +35,8 @@ class LLMFallback:
         validate: Optional[Callable[[Dict], None]] = None,
     ) -> Optional[Dict]:
         """Try configured providers until one returns valid, usable JSON."""
+        self.last_provider = None
+        self.last_model = None
         for name, key, call in self.providers:
             if not key or not key.strip():
                 continue
@@ -43,6 +55,8 @@ class LLMFallback:
                     raise ValueError("Response was not a JSON object")
                 if validate:
                     validate(parsed)
+                self.last_provider = name
+                self.last_model = self.MODEL_IDS.get(name, "unknown")
                 print(f"LLM fallback: {name} succeeded")
                 return parsed
             except (requests.RequestException, ValueError, KeyError, TypeError, IndexError, AttributeError) as exc:
