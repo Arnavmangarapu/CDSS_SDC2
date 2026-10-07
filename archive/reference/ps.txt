@@ -1,3 +1,0 @@
-Agentic Graph-RAG for Clinical Decision Support
-The existing multi-agent Biomedical RAG-based Clinical Decision Support System relies solely on vector-based retrieval and lacks structured medical knowledge representation, limiting its ability to perform relationship-aware reasoning and explainable decision-making.  Therefore, there is a need to develop a Graph-RAG Enhanced Multi-Agent Clinical Decision Support System that integrates Medical Knowledge Graphs with Biomedical Literature Retrieval to improve retrieval accuracy, clinical reasoning, explainability, and diagnostic decision support.
-
