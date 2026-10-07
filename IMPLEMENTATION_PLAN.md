@@ -14,7 +14,7 @@ The first implementation should cover one defined clinical area and a versioned 
 | --- | --- | --- | --- |
 | 0. Save the current prototype | Complete | `pre-claim-verification` (`e00a737`) | Baseline source committed; credentials, datasets, virtual environment, and large references excluded. |
 | 1. Replace stale handoff documents | Complete | `implementation-plan-v1` | This plan and README are current; obsolete handoff files removed. |
-| 2. Define evidence and claim contracts | Pending | `claim-step-2-contracts` | Stable source IDs, source spans, claim status, and backward-compatible API models tested. |
+| 2. Define evidence and claim contracts | Complete | `claim-step-2-contracts` | Stable source IDs, source spans, claim status, and backward-compatible API models tested. |
 | 3. Curate and ingest authoritative sources | Pending | `claim-step-3-sources` | One clinical area indexed with a versioned manifest and reproducible retrieval. |
 | 4. Extract patient context and unknowns | Pending | `claim-step-4-context` | Allergies, current medicines, relevant observations, and missingness survive the full request path. |
 | 5. Produce source-linked diagnostic and treatment claims | Pending | `claim-step-5-claims` | Fusion returns conditional claims with evidence IDs; unsupported content is marked unverified. |
@@ -96,3 +96,4 @@ Freeze a test set that is separate from indexed sources. Compare at least LLM-on
 
 - 2026-10-07 — Step 0 complete. Initialized Git and saved the current prototype as `e00a737` / `pre-claim-verification`. Moved credentials from a loose Markdown note and source literal into ignored `.env` before the first commit; Serper still reads the same active key. Focused LLM fallback tests: 2 passed. Broader clinical evaluation has not been established.
 - 2026-10-07 — Step 1 complete on `claim-verification`. Created this plan, updated README, and removed obsolete handoff notes and old logs. No claim-verification feature has been implemented yet.
+- 2026-10-07 — Step 2 complete. Added versioned source-passage IDs, typed clinical claims, source links in retrieval/report schemas, and structural provenance checks. Existing report fields still parse. Six focused tests pass. The existing FastAPI `TestClient` health test hangs in this environment and was stopped after 15 seconds; no full API test was claimed. Source-to-claim semantic verification remains Step 6.

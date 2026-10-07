@@ -1,5 +1,6 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Dict, Any
+from .evidence import SourcePassage
 
 class GraphPath(BaseModel):
     nodes: List[Dict[str, Any]]
@@ -21,3 +22,4 @@ class OrchestratorResult(BaseModel):
     vector_results: VectorRetrievalResult
     drug_safety_results: List[Dict[str, Any]] = []
     web_search_results: List[Dict[str, Any]] = []
+    source_passages: List[SourcePassage] = Field(default_factory=list)
