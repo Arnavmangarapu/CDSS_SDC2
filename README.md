@@ -1,47 +1,114 @@
-# Multi-Agent Graph-RAG Clinical Decision Support Prototype
+# Evidence-linked Graph-RAG clinical decision support prototype
 
-Research prototype for a clinician-facing differential diagnosis and evidence retrieval workflow. It is not validated for clinical use.
+A clinician-facing **research prototype** that turns a free-text case into a differential, conditional investigations and treatment options, medication-safety findings, and claim-level source links. It combines a biomedical knowledge graph, text retrieval, and a small pinned set of guideline and drug-label passages. Its current authoritative-source scope is **adult hypertension and one amlodipine label**. It is not validated for diagnosis, prescribing, clinical safety, or patient use.
 
-## Current architecture
+The contribution being tested is an **evidence-linked claim workflow**: the model proposes claims, while a separate verifier checks source identity and narrow applicability rules. A linked source is not, by itself, proof that a clinical claim is true or appropriate for a patient. Most generated claims remain `unverified`; the only automatically supported findings are narrow, rule-checked warnings from the pinned amlodipine label.
 
-Clinical case → clarifier and entity linker → retrieval orchestrator (Neo4j graph, Qdrant vectors, DrugCentral, web discovery) → evidence ranker → conflict detector → clinical fusion → claim verifier and label safety checks → confidence retry heuristic → report.
+## What the project contains
 
-Versioned guideline and drug-label retrieval, traceable patient-context extraction, conditional claim proposals, and a fail-closed verification gate are implemented for a narrow adult hypertension source set. Candidate claims remain unverified unless a narrow pinned-label safety rule applies. The report UI shows each claim's status, conditions, missing checks, and source section/date; it does not show an uncalibrated confidence percentage. See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for completion gates and progress, and [datasets/DATASET_GUIDE.md](datasets/DATASET_GUIDE.md) for the local data inventory.
+- A FastAPI endpoint (`POST /analyze`) and a browser interface (`/ui`) for clinician review.
+- Extraction of stated patient facts and missing information, including allergy status, current medicines, blood pressure, selected labs, pregnancy status, and known hypertension.
+- Retrieval from Neo4j graph relations, Qdrant textbook passages, and separately indexed versioned NICE and DailyMed passages. DrugCentral associations and optional Serper snippets contribute candidate signals, not verified citations.
+- Typed diagnosis, investigation, treatment, and medication-warning claims with `supported`, `conflicting`, or `unverified` status, source IDs, conditions, and missing checks.
+- A six-case synthetic engineering evaluation comparing LLM-only, text-RAG, and graph-plus-text modes. It produces case-level errors, provenance, and a blinded review packet.
 
-## Run locally
+See [ARCHITECTURE.md](ARCHITECTURE.md) for diagrams and implementation detail, [SAMPLE_CASES.md](SAMPLE_CASES.md) for copyable inputs, and [evaluation/README.md](evaluation/README.md) for metric definitions.
 
-From this directory:
+## Architecture at a glance
 
-```bash
-source venv/bin/activate
-pip install -r requirements.txt
-./run_qdrant.sh
-./run_neo4j.sh
-python -m backend.main
+```mermaid
+flowchart LR
+    Case[Clinical case] --> Context[Extract and normalize patient context]
+    Context --> Retrieval[Graph and text retrieval]
+    Retrieval --> Proposals[Rank evidence and propose claims]
+    Proposals --> Gate[Verify citations and narrow safety rules]
+    Gate --> Report[Clinician review report]
 ```
 
-The API exposes `/health` and `/analyze`; the existing frontend is served at `/ui` on port 8000. Large datasets and database contents are local and excluded from Git. Copy `.env.example` to `.env` and supply keys in `.env`; never commit credentials.
+The verifier accepts only passages that match the pinned source manifest and local snapshot. Graph edges, textbook matches, DrugCentral targets, and web snippets can suggest what to examine, but cannot establish a supported treatment claim. Details of this trust boundary are in [ARCHITECTURE.md](ARCHITECTURE.md).
 
-`/analyze` retains `ranked_diagnoses`, `overall_confidence` (an uncalibrated legacy retry score), and `claims`. The report also includes `differential` entries linked by claim ID, `unassigned_diagnostic_claim_ids`, `investigation_claim_ids`, `treatment_claim_ids`, `medication_safety`, `evidence_completeness`, and `verification_failures`. Claims and source passages remain the authoritative detail records for these IDs. The UI presents missing allergy and medication information as unknown, never as a safety clearance.
+## Local setup
 
-The `/ui` HTML, script, and stylesheet are served with `Cache-Control: no-store`; the page also uses versioned asset URLs. This prevents a browser from combining an old report script with newer markup after an update. If an existing tab still shows the legacy percentage badge, reload that tab once.
+The repository contains code, a versioned source manifest, and synthetic test cases. It **does not include** the large biomedical datasets, Qdrant or Neo4j contents, or the raw NICE/DailyMed snapshots. You need the local inputs described in [datasets/DATASET_GUIDE.md](datasets/DATASET_GUIDE.md) to reproduce the full pipeline. Respect each source's reuse terms before obtaining or redistributing it.
 
-## Synthetic evaluation
+1. Clone and install dependencies (the current local evaluation used Python 3.14):
 
-Run `python -m evaluation.run --output evaluation/runs/full-001` to compare LLM-only, text-RAG, and graph-plus-text modes on the frozen synthetic cases. The command writes metrics, case-level errors, provider and source provenance, and a blinded review packet. See [evaluation/README.md](evaluation/README.md) for metric definitions and limitations. These fixtures and scores do not establish clinical diagnostic accuracy or safety; independent clinician review is pending.
+   ```bash
+   git clone https://github.com/Arnavmangarapu/CDSS_SDC2.git
+   cd CDSS_SDC2
+   python -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements.txt
+   cp .env.example .env
+   ```
 
-## Pinned authoritative sources
+   Put provider keys in the untracked `.env`. At least one configured LLM provider is recommended for useful synthesis. Without one, limited fallback extraction and graph-candidate output may still run. Never commit `.env` or real patient information.
 
-The source manifest is [sources/hypertension/manifest.json](sources/hypertension/manifest.json). It pins the official NICE NG136 recommendations page and one DailyMed amlodipine label by version and SHA-256. The raw documents are stored under ignored `datasets/authoritative/` and need an independent clinician review before clinical use.
+2. Place the HPO, MONDO, biomedical graph, DrugCentral, and textbook files at the paths in the [data guide](datasets/DATASET_GUIDE.md). Start the local services and index the graph/text data:
+
+   ```bash
+   ./run_qdrant.sh
+   ./run_neo4j.sh
+   python ingestion/populate_neo4j.py --limit 50000
+   python ingestion/populate_qdrant.py
+   ```
+
+   These scripts are for local development. They use a fixed local Neo4j password; change the credentials and deployment settings before using a shared environment. The Neo4j script imports 50,000 rows by default; the textbook script indexes only the first 150,000 characters of one MedQA textbook.
+
+3. Fetch and index the pinned authoritative sources:
+
+   ```bash
+   python -m ingestion.authoritative_sources fetch
+   python -m ingestion.authoritative_sources verify
+   python -m ingestion.authoritative_sources ingest
+   ```
+
+   `fetch` requires an exact SHA-256 match to [the manifest](sources/hypertension/manifest.json). If an upstream page or label changed, review it and update the manifest/version instead of bypassing the check. The currently pinned sources are [NICE NG136](https://www.nice.org.uk/guidance/ng136/chapter/Recommendations) (England) and a [DailyMed amlodipine label](https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=0c5784b9-5542-144f-e063-6394a90a7ebc) (United States); their jurisdictions differ and independent clinical source review is pending.
+
+4. Start the API and open `http://localhost:8000/ui`:
+
+   ```bash
+   python -m backend.main
+   ```
+
+   `GET /health` checks the API process, not the readiness of every database or LLM provider. `POST /analyze` accepts `{"case_text":"..."}` and returns `patient_context`, retrieval counts, and a structured `report`.
+
+### Sample input
+
+Paste this synthetic example into `/ui`:
+
+> A 57-year-old woman with confirmed hypertension currently takes amlodipine. She has no known drug allergies and reports no other current medications.
+
+In one saved graph-plus-text run, hypertension ranked first, current amlodipine was listed, and the missing blood-pressure reading remained visible. Claims that had not passed clinical verification stayed `unverified`. Outputs can change with provider fallback and retrieval state. More examples, including known failure cases, are in [SAMPLE_CASES.md](SAMPLE_CASES.md).
+
+## Evaluation and tests
+
+Run the frozen synthetic comparison after preparing the local stores and pinned snapshots:
 
 ```bash
-python -m ingestion.authoritative_sources fetch
-python -m ingestion.authoritative_sources verify
-python -m ingestion.authoritative_sources ingest
+python -m evaluation.run --output evaluation/runs/my-run
+python -m pytest -q tests/
 ```
 
-`fetch` refuses changed remote bytes; review and version the manifest before ingesting a changed source. `ingest` replaces the two dedicated Qdrant collections and leaves the textbook collection alone. Retrieved source passages carry exact section names, stable IDs, URL, version, and checksum. Serper snippets remain discovery leads and are not accepted as citation passages.
+Each run writes `metrics.json`, `case_errors.jsonl`, captured reports, a source/model provenance manifest, and a blinded claim-review packet under ignored `evaluation/runs/`. Re-score a capture without provider calls using `--replay`; see [evaluation/README.md](evaluation/README.md).
 
-## Recovery checkpoint
+In the 2026-10-07 local six-case engineering run, exact alias top-1 matches were 1/6 (LLM-only), 4/6 (text-RAG), and 5/6 (graph plus text). Pinned citation identity matched for 13/13 text-RAG and 17/17 graph-plus-text citation uses. These **are not clinical accuracy or claim-support results**: diagnoses were stated in the synthetic inputs, the sample is tiny, and synthesis providers differed or were unknown across modes for three cases. Claim-support accuracy and unsafe-option rate remain unavailable without independent clinician adjudication. The run also exposed an allergy extraction error documented in [SAMPLE_CASES.md](SAMPLE_CASES.md).
 
-The current prototype before claim verification is saved in Git as `pre-claim-verification` (`e00a737`). The active implementation and rollback instructions are in [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md).
+## Research framing and boundaries
+
+A defensible description for a methods or feasibility manuscript is **“an evidence-linked Graph-RAG prototype for clinician-facing differential and conditional treatment review in a limited adult-hypertension source domain.”** The current work demonstrates an implemented provenance and abstention workflow plus a reproducible synthetic evaluation. It does not demonstrate improved diagnosis, safe medicine selection, calibrated probabilities, clinician agreement, or patient outcomes. Those claims require a larger, independently labeled dataset, blinded clinician review of claims and safety, controlled model comparisons, and prospective evaluation. The pinned source set and case labels have not yet had independent clinical review.
+
+Raw case text is sent to configured external LLM providers, and selected terms may be sent to Serper when its key is enabled. The prototype has no clinical deployment controls or patient-data governance. Use synthetic or appropriately de-identified data in local demonstrations.
+
+## Repository layout
+
+| Path | Purpose |
+| --- | --- |
+| `backend/api`, `backend/agents`, `backend/services`, `backend/schemas` | API, analysis flow, retrieval/verification, and typed contracts |
+| `frontend/` | Browser review interface |
+| `ingestion/` | Local graph/text and pinned-source ingestion |
+| `sources/hypertension/manifest.json` | Version, checksum, scope, and reuse metadata for citable sources |
+| `evaluation/` | Frozen synthetic cases, ablation runner, metrics, review packet format |
+| `datasets/DATASET_GUIDE.md` | Local data layout and setup limits; raw data is not in Git |
+
+No license for this repository is asserted here. External datasets and documents retain their own terms; confirm permissions before redistribution or a public release beyond the code and metadata.
