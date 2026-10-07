@@ -345,3 +345,58 @@ textarea::placeholder {
 .animate-up {
     animation: slideUp 0.5s ease backwards;
 }
+
+/* Evidence review: section edges and status colors carry meaning. */
+.review-section { margin-top: 1.75rem; }
+.review-section.glass-panel { padding: 1.5rem; }
+.review-section h3 { color: #f8fafc; font-size: 1.2rem; margin-bottom: 0.65rem; }
+.review-section > p { line-height: 1.55; }
+.review-muted { color: #a8b7c9; font-size: 0.9rem; line-height: 1.55; }
+.review-label { color: #b7d6df; border: 1px solid #51717d; border-radius: 6px; padding: 0.4rem 0.65rem; font-size: 0.85rem; }
+.review-list { padding-left: 1.2rem; margin-top: 0.35rem; line-height: 1.55; }
+.review-list li { margin: 0.2rem 0; overflow-wrap: anywhere; }
+.review-group { margin-top: 0.8rem; }
+.review-group h4 { color: #d7e4ee; font-size: 0.88rem; font-weight: 600; }
+.context-fact { font-size: 0.88rem; line-height: 1.5; margin: 0.3rem 0; overflow-wrap: anywhere; }
+.context-fact strong { color: #d7e4ee; }
+.differential-card { padding: 1.25rem; }
+.differential-title { font-size: 1.08rem; margin-bottom: 0.85rem; }
+.claim-list { display: grid; gap: 0.85rem; margin-top: 0.75rem; }
+.claim-card { border-left: 3px solid #b18a52; background: rgba(35, 42, 57, 0.72); padding: 1rem 1.1rem; border-radius: 0 8px 8px 0; overflow-wrap: anywhere; }
+.claim-card.status-supported { border-color: #55a995; }
+.claim-card.status-conflicting { border-color: #de8274; }
+.claim-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.8rem; }
+.claim-text { font-weight: 600; line-height: 1.45; }
+.claim-status { flex: none; font-size: 0.78rem; padding: 0.25rem 0.5rem; border-radius: 4px; color: #f4d3a0; background: #51412e; }
+.claim-status.supported { color: #b8eadf; background: #275548; }
+.claim-status.conflicting { color: #ffd8d1; background: #63372f; }
+.claim-applies, .claim-reason, .claim-caution { font-size: 0.88rem; line-height: 1.55; margin-top: 0.6rem; }
+.claim-applies { color: #bcd4df; }
+.claim-reason { color: #f4d3a0; }
+.claim-caution { color: #ffd8d1; }
+.claim-citations { margin-top: 0.9rem; border-top: 1px solid var(--border-glass); padding-top: 0.65rem; }
+.citation-row { display: grid; gap: 0.25rem; padding: 0.5rem 0; font-size: 0.84rem; }
+.citation-role { color: #a8b7c9; }
+.citation-meta { color: #a8b7c9; font-size: 0.78rem; }
+.source-link { color: #9cdbed; text-decoration-thickness: 1px; text-underline-offset: 3px; overflow-wrap: anywhere; }
+.source-link:hover { color: #d0f2fa; }
+.citation-excerpt summary { color: #b7d6df; cursor: pointer; width: fit-content; }
+.citation-excerpt p { margin-top: 0.4rem; padding: 0.6rem 0.8rem; background: #1a2433; border-radius: 4px; line-height: 1.55; }
+.safety-finding { margin-top: 0.8rem; border-left: 3px solid #b18a52; background: #302b2b; padding: 0.85rem 1rem; border-radius: 0 6px 6px 0; line-height: 1.5; }
+.safety-finding.supported { border-color: #de8274; }
+.safety-label { color: #f4d3a0; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.3rem; }
+.safety-finding.supported .safety-label { color: #ffd8d1; }
+.source-link:focus-visible, .citation-excerpt summary:focus-visible, button:focus-visible, textarea:focus-visible { outline: 2px solid #a7e0f1; outline-offset: 3px; }
+
+@media (max-width: 850px) {
+    .app-container { flex-direction: column; padding: 1rem; gap: 1.25rem; }
+    .sidebar { width: 100%; height: auto; position: static; padding: 1.25rem; }
+    .main-content { gap: 1.25rem; }
+    header h1 { font-size: 1.8rem; }
+    .claim-header { flex-direction: column; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .animate-up, .spinner { animation: none; }
+    .diag-card, .glow-btn, textarea { transition: none; }
+}

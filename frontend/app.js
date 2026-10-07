@@ -1,155 +1,209 @@
-document.getElementById('analyze-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const caseInput = document.getElementById('case-input').value;
-    if (!caseInput.trim()) return;
-
-    // UI States
-    const btn = document.getElementById('submit-btn');
+document.getElementById('analyze-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const caseText = document.getElementById('case-input').value.trim();
+    if (!caseText) return;
+    const button = document.getElementById('submit-btn');
     const spinner = document.getElementById('loading-spinner');
-    const btnText = btn.querySelector('.btn-text');
-    const resultsSection = document.getElementById('results-section');
-    
-    btn.disabled = true;
+    button.disabled = true;
     spinner.classList.remove('hidden');
-    btnText.textContent = 'Analyzing...';
-    resultsSection.classList.add('hidden');
-
+    button.querySelector('.btn-text').textContent = 'Analyzing...';
+    document.getElementById('results-section').classList.add('hidden');
     try {
         const response = await fetch('/analyze', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ case_text: caseInput })
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({case_text: caseText}),
         });
-
         if (!response.ok) throw new Error('Analysis failed');
-
-        const data = await response.json();
-        renderResults(data);
+        renderResults(await response.json());
     } catch (error) {
         console.error(error);
-        alert('An error occurred during analysis.');
+        alert('The report could not be generated. Please try again.');
     } finally {
-        btn.disabled = false;
+        button.disabled = false;
         spinner.classList.add('hidden');
-        btnText.textContent = 'Analyze Case';
+        button.querySelector('.btn-text').textContent = 'Analyze Case';
     }
 });
 
+function element(tag, className, value) {
+    const item = document.createElement(tag);
+    if (className) item.className = className;
+    if (value !== undefined && value !== null) item.textContent = String(value);
+    return item;
+}
+
+function clear(id) {
+    const container = document.getElementById(id);
+    container.replaceChildren();
+    return container;
+}
+
+function addList(parent, heading, values, emptyText) {
+    const group = element('div', 'review-group');
+    group.appendChild(element('h4', '', heading));
+    if (!values.length) group.appendChild(element('p', 'review-muted', emptyText));
+    else {
+        const list = element('ul', 'review-list');
+        values.forEach(value => list.appendChild(element('li', '', value)));
+        group.appendChild(list);
+    }
+    parent.appendChild(group);
+}
+
+function sourceLink(source, label) {
+    try {
+        const url = new URL(source.url);
+        if (url.protocol === 'https:' && ['www.nice.org.uk', 'dailymed.nlm.nih.gov'].includes(url.hostname)) {
+            const link = element('a', 'source-link', label);
+            link.href = url.href;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            return link;
+        }
+    } catch (_) { /* invalid URLs are shown as text */ }
+    return element('span', 'review-muted', `${label} (link unavailable)`);
+}
+
+function addCitation(parent, source, role, sourceId) {
+    const row = element('div', 'citation-row');
+    row.appendChild(element('span', 'citation-role', role));
+    if (!source) {
+        row.appendChild(element('span', 'review-muted', `Unresolved source: ${sourceId}`));
+        parent.appendChild(row);
+        return;
+    }
+    const date = source.updated_date || source.document_date || 'date unavailable';
+    row.appendChild(sourceLink(source, `${source.source_name}: ${source.section} (${date})`));
+    row.appendChild(element('span', 'citation-meta',
+        `${source.document_id}, version ${source.document_version}; ${source.jurisdiction || 'jurisdiction unspecified'}`));
+    const excerpt = element('details', 'citation-excerpt');
+    excerpt.appendChild(element('summary', '', 'View cited passage'));
+    excerpt.appendChild(element('p', '', source.passage));
+    row.appendChild(excerpt);
+    parent.appendChild(row);
+}
+
+function renderClaim(claim, sources) {
+    const status = claim.status || 'unverified';
+    const card = element('article', `claim-card status-${status}`);
+    const header = element('div', 'claim-header');
+    header.appendChild(element('p', 'claim-text', claim.text));
+    const labels = {supported: 'Supported finding', conflicting: 'Conflicting', unverified: 'Needs verification'};
+    header.appendChild(element('span', `claim-status ${status}`, labels[status] || labels.unverified));
+    card.appendChild(header);
+    if (claim.applies_to) card.appendChild(element('p', 'claim-applies', `Applies to: ${claim.applies_to}`));
+    if (claim.conditions?.length) addList(card, 'Conditions', claim.conditions, '');
+    if (claim.missing_checks?.length) addList(card, 'Checks still needed', claim.missing_checks, '');
+    if (status === 'unverified') card.appendChild(element('p', 'claim-reason',
+        claim.unverified_reason || 'Independent verification is incomplete.'));
+    if (claim.claim_type === 'treatment' && status !== 'supported') card.appendChild(element('p', 'claim-caution',
+        'This is a proposal for clinician review, not a cleared treatment.'));
+    const citations = element('div', 'claim-citations');
+    [
+        ['supporting_evidence_ids', status === 'supported' ? 'Verified source' : 'Proposed supporting source'],
+        ['conflicting_evidence_ids', 'Conflicting source'],
+        ['unverified_evidence_ids', 'Source awaiting review'],
+    ].forEach(([field, role]) => (claim[field] || []).forEach(id => addCitation(citations, sources.get(id), role, id)));
+    (claim.rejected_evidence_ids || []).forEach(id =>
+        citations.appendChild(element('p', 'review-muted', `Rejected citation: ${id}`)));
+    if (!citations.childElementCount) citations.appendChild(element('p', 'review-muted', 'No authoritative citation linked.'));
+    card.appendChild(citations);
+    return card;
+}
+
+function renderClaimList(container, ids, claims, sources, emptyText) {
+    const selected = ids.map(id => claims.get(id)).filter(Boolean);
+    if (!selected.length) {
+        if (emptyText) container.appendChild(element('p', 'review-muted', emptyText));
+        return;
+    }
+    selected.forEach(claim => container.appendChild(renderClaim(claim, sources)));
+}
+
+function statusText(status, kind, values) {
+    if (status === 'unknown') return `${kind} information was not supplied.`;
+    if (status === 'conflicting') return `${kind} statements conflict and need confirmation.`;
+    if (status === 'none_reported') return 'No current medicines were reported.';
+    if (status === 'no_known_allergies') return 'No known allergies were reported; this is not a safety clearance.';
+    return values.length ? values.join(', ') : `${kind} status was reported, but no names were extracted.`;
+}
+
 function renderResults(data) {
-    // Show sections
-    document.getElementById('results-section').classList.remove('hidden');
-    
-    // 1. Render Patient Context (Sidebar)
-    const ctx = data.patient_context;
-    const ctxContainer = document.getElementById('patient-context');
-    ctxContainer.innerHTML = '';
-    ctxContainer.classList.remove('empty-state');
-
-    const addTags = (title, items, type) => {
-        if (!items || items.length === 0) return;
-        const wrapper = document.createElement('div');
-        wrapper.style.marginBottom = '1rem';
-        wrapper.innerHTML = `<div style="font-size:0.8rem; color:#94a3b8; margin-bottom:0.3rem;">${title}</div>`;
-        items.forEach(item => {
-            const span = document.createElement('span');
-            span.className = `context-item ${type}`;
-            span.textContent = item.text || item.normalized_name;
-            wrapper.appendChild(span);
-        });
-        ctxContainer.appendChild(wrapper);
-    };
-
-    if (ctx.age || ctx.sex) {
-        const demo = document.createElement('div');
-        demo.className = 'context-item';
-        demo.style.background = 'rgba(255,255,255,0.1)';
-        demo.textContent = `${ctx.age || '?'} yo ${ctx.sex || 'Unknown'}`;
-        ctxContainer.appendChild(demo);
-    }
-
-    addTags('Symptoms', ctx.symptoms, 'symptom');
-    addTags('Conditions', ctx.known_conditions, 'condition');
-    addTags('Medications', ctx.medications, 'medication');
-
-    // 2. Render Missing Info (Sidebar)
-    const missingList = document.getElementById('missing-info-list');
-    missingList.innerHTML = '';
     const report = data.report || {};
-    const missing = report.missing_information || [];
-    if (missing.length > 0) {
-        missing.forEach(m => {
-            const li = document.createElement('li');
-            li.textContent = m;
-            missingList.appendChild(li);
-        });
-    } else {
-        missingList.innerHTML = '<li>None detected.</li>';
+    const context = data.patient_context || {};
+    const claims = new Map((report.claims || []).map(item => [item.claim_id, item]));
+    const sources = new Map((report.source_passages || []).map(item => [item.id, item]));
+    document.getElementById('results-section').classList.remove('hidden');
+
+    const contextPanel = clear('patient-context');
+    contextPanel.classList.remove('empty-state');
+    [
+        ['Age', context.age ?? 'not supplied'], ['Sex', context.sex || 'not supplied'],
+        ['Allergy status', (context.allergy_status || 'unknown').replaceAll('_', ' ')],
+        ['Medication list', (context.medication_list_status || 'unknown').replaceAll('_', ' ')],
+    ].forEach(([label, value]) => {
+        const row = element('p', 'context-fact');
+        row.appendChild(element('strong', '', `${label}: `));
+        row.appendChild(document.createTextNode(String(value)));
+        contextPanel.appendChild(row);
+    });
+
+    const missing = clear('missing-info-list');
+    (report.missing_information || []).forEach(item => missing.appendChild(element('li', '', item)));
+    if (!missing.childElementCount) missing.appendChild(element('li', '', 'No additional missing facts recorded.'));
+    document.getElementById('case-summary').textContent = report.case_summary || 'No case summary available.';
+    const counts = report.evidence_completeness || {};
+    document.getElementById('evidence-overview').textContent =
+        `${counts.supported_claims || 0} supported findings; ${counts.conflicting_claims || 0} conflicting claims; ` +
+        `${counts.unverified_claims || 0} claims need verification. These counts are not diagnostic probabilities.`;
+
+    const differential = clear('diagnoses-container');
+    const entries = report.differential?.length ? report.differential :
+        (report.ranked_diagnoses || []).map((item, index) => ({rank: index + 1, diagnosis: item.diagnosis, diagnostic_claim_ids: []}));
+    if (!entries.length) differential.appendChild(element('p', 'review-muted', 'No differential candidates were generated.'));
+    entries.forEach(entry => {
+        const card = element('article', 'differential-card glass-panel');
+        card.appendChild(element('h4', 'differential-title', `${entry.rank}. ${entry.diagnosis}`));
+        renderClaimList(card, entry.diagnostic_claim_ids || [], claims, sources,
+            'No source-linked diagnostic claim was generated for this candidate.');
+        differential.appendChild(card);
+    });
+    if (report.unassigned_diagnostic_claim_ids?.length) {
+        const other = element('article', 'differential-card glass-panel');
+        other.appendChild(element('h4', 'differential-title', 'Other diagnostic claims'));
+        renderClaimList(other, report.unassigned_diagnostic_claim_ids, claims, sources, '');
+        differential.appendChild(other);
     }
+    renderClaimList(clear('investigations-list'), report.investigation_claim_ids || [], claims,
+        sources, 'No source-linked investigation was proposed.');
+    renderClaimList(clear('treatments-list'), report.treatment_claim_ids || [], claims,
+        sources, 'No source-linked treatment option was proposed.');
 
-    // 3. Render Diagnoses (Main)
-    const diagContainer = document.getElementById('diagnoses-container');
-    diagContainer.innerHTML = '';
-    const diagnoses = report.ranked_diagnoses || [];
+    const safetyPanel = clear('medication-safety');
+    const safety = report.medication_safety || {};
+    addList(safetyPanel, 'Current medicines', [statusText(safety.medication_list_status || 'unknown',
+        'Medication', safety.current_medications || [])], '');
+    addList(safetyPanel, 'Allergies', [statusText(safety.allergy_status || 'unknown',
+        'Allergy', safety.allergies || [])], '');
+    const warningIds = safety.warning_claim_ids || [];
+    const warningTexts = new Set(warningIds.map(id => claims.get(id)?.text).filter(Boolean));
+    const findings = (safety.findings || []).filter(item => !warningTexts.has(item.description));
+    if (!findings.length && !warningIds.length) safetyPanel.appendChild(element('p', 'claim-caution',
+        'No verified medication warning was found by this limited check. Medication safety has not been established.'));
+    findings.forEach(finding => {
+        const item = element('article', `safety-finding ${finding.verification_status || 'unverified'}`);
+        item.appendChild(element('p', 'safety-label', finding.verification_status === 'supported'
+            ? 'Label-backed warning' : 'Unverified safety concern'));
+        item.appendChild(element('p', '', finding.description));
+        if (finding.source_passage_id) addCitation(item, sources.get(finding.source_passage_id),
+            'Safety source', finding.source_passage_id);
+        safetyPanel.appendChild(item);
+    });
+    renderClaimList(safetyPanel, warningIds, claims, sources, '');
 
-    if (diagnoses.length === 0) {
-        diagContainer.innerHTML = '<div class="glass-panel" style="padding:2rem; text-align:center;">No differential diagnoses could be generated.</div>';
-    } else {
-        diagnoses.forEach((d, index) => {
-            const card = document.createElement('div');
-            card.className = 'diag-card glass-panel animate-up';
-            card.style.animationDelay = `${index * 0.1}s`;
-
-            let safetyHtml = '';
-            if (d.safety_notes && d.safety_notes.length > 0) {
-                d.safety_notes.forEach(note => {
-                    safetyHtml += `<div class="safety-note">⚠️ ${note}</div>`;
-                });
-            }
-
-            let treatmentsHtml = '';
-            if (d.treatment_considerations && d.treatment_considerations.length > 0) {
-                treatmentsHtml = `<h4>Treatment Considerations</h4><ul class="list-items">`;
-                d.treatment_considerations.forEach(t => treatmentsHtml += `<li>${t}</li>`);
-                treatmentsHtml += `</ul>`;
-            }
-
-            card.innerHTML = `
-                <div class="diag-header">
-                    <div class="diag-title">${d.diagnosis}</div>
-                    <div class="conf-badge conf-low">Uncalibrated</div>
-                </div>
-                <div class="diag-body">
-                    ${treatmentsHtml}
-                    ${safetyHtml}
-                </div>
-            `;
-            diagContainer.appendChild(card);
-        });
-    }
-
-    // 4. Render Investigations
-    const invPanel = document.getElementById('investigations-panel');
-    const invList = document.getElementById('investigations-list');
-    invList.innerHTML = '';
-    
-    // We get investigations from the top diagnosis, or merge them. For simplicity, grab from first.
-    let invs = [];
-    if (diagnoses.length > 0 && diagnoses[0].recommended_tests) {
-        invs = diagnoses[0].recommended_tests;
-    }
-    
-    if (invs.length > 0) {
-        invPanel.classList.remove('hidden');
-        invs.forEach(inv => {
-            const li = document.createElement('li');
-            li.textContent = inv;
-            invList.appendChild(li);
-        });
-    } else {
-        invPanel.classList.add('hidden');
-    }
-
-    // 5. Disclaimer
-    document.getElementById('report-disclaimer').textContent = report.disclaimer || "This is a research prototype.";
+    const limitations = clear('limitations-list');
+    addList(limitations, 'Review before use',
+        [...new Set([...(report.limitations || []), ...(report.verification_failures || [])])],
+        'No limitations recorded.');
+    document.getElementById('report-disclaimer').textContent = report.disclaimer || 'This is a research prototype.';
 }

@@ -179,3 +179,8 @@ def test_analyze_route_reports_verified_warning_and_separate_completeness(monkey
     assert report["evidence_completeness"]["conflicting_claims"] == 1
     assert report["confidence_calibrated"] is False
     assert any(item["type"] == "amlodipine_allergy" for item in report["conflicts"])
+    assert report["differential"][0]["diagnosis"] == "Hypertension"
+    assert report["treatment_claim_ids"] == ["claim_candidate"]
+    assert report["medication_safety"]["allergy_status"] == "allergies_reported"
+    assert report["medication_safety"]["warning_claim_ids"]
+    assert report["medication_safety"]["findings"][0]["source_passage_id"] == label.id

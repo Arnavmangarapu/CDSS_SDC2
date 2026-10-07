@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Literal, Optional
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from .evidence import EvidenceItem, SourcePassage
+from .patient import AllergyStatus, MedicationListStatus
 
 
 ClaimType = Literal["diagnosis", "investigation", "treatment", "medication_warning"]
@@ -60,6 +61,23 @@ class DiagnosisCandidate(BaseModel):
     safety_notes: List[str] = Field(default_factory=list)
 
 
+class DifferentialEntry(BaseModel):
+    rank: int = Field(ge=1)
+    diagnosis: str
+    diagnostic_claim_ids: List[str] = Field(default_factory=list)
+    investigation_claim_ids: List[str] = Field(default_factory=list)
+    treatment_claim_ids: List[str] = Field(default_factory=list)
+
+
+class MedicationSafetySummary(BaseModel):
+    current_medications: List[str] = Field(default_factory=list)
+    medication_list_status: MedicationListStatus = "unknown"
+    allergies: List[str] = Field(default_factory=list)
+    allergy_status: AllergyStatus = "unknown"
+    findings: List[Dict[str, Any]] = Field(default_factory=list)
+    warning_claim_ids: List[str] = Field(default_factory=list)
+
+
 class ClinicalReport(BaseModel):
     disclaimer: str
     case_summary: str
@@ -74,6 +92,11 @@ class ClinicalReport(BaseModel):
     confidence_calibrated: bool = False
     evidence_completeness: Dict[str, int] = Field(default_factory=dict)
     verification_failures: List[str] = Field(default_factory=list)
+    differential: List[DifferentialEntry] = Field(default_factory=list)
+    unassigned_diagnostic_claim_ids: List[str] = Field(default_factory=list)
+    investigation_claim_ids: List[str] = Field(default_factory=list)
+    treatment_claim_ids: List[str] = Field(default_factory=list)
+    medication_safety: MedicationSafetySummary = Field(default_factory=MedicationSafetySummary)
 
     @model_validator(mode="after")
     def validate_claim_provenance(self) -> "ClinicalReport":
@@ -97,4 +120,29 @@ class ClinicalReport(BaseModel):
                 for source_id in claim.supporting_evidence_ids
             ):
                 raise ValueError(f"Claim {claim.claim_id} cannot be supported only by graph relations")
+        claims_by_id = {claim.claim_id: claim for claim in self.claims}
+        grouped = [
+            (self.unassigned_diagnostic_claim_ids, "diagnosis"),
+            (self.investigation_claim_ids, "investigation"),
+            (self.treatment_claim_ids, "treatment"),
+            (self.medication_safety.warning_claim_ids, "medication_warning"),
+        ]
+        for entry in self.differential:
+            grouped.extend([
+                (entry.diagnostic_claim_ids, "diagnosis"),
+                (entry.investigation_claim_ids, "investigation"),
+                (entry.treatment_claim_ids, "treatment"),
+            ])
+        for ids, expected_type in grouped:
+            if len(ids) != len(set(ids)) or any(
+                source_id not in claims_by_id or claims_by_id[source_id].claim_type != expected_type
+                for source_id in ids
+            ):
+                raise ValueError(f"{expected_type} claim references must resolve to matching claims")
+        for finding in self.medication_safety.findings:
+            source_id = finding.get("source_passage_id")
+            if source_id and source_id not in sources_by_id:
+                raise ValueError("Medication safety finding cites an unavailable source passage")
+            if finding.get("verification_status") == "supported" and not source_id:
+                raise ValueError("Supported medication safety finding needs a source passage")
         return self

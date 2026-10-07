@@ -6,7 +6,7 @@ Research prototype for a clinician-facing differential diagnosis and evidence re
 
 Clinical case → clarifier and entity linker → retrieval orchestrator (Neo4j graph, Qdrant vectors, DrugCentral, web discovery) → evidence ranker → conflict detector → clinical fusion → claim verifier and label safety checks → confidence retry heuristic → report.
 
-Versioned guideline and drug-label retrieval, traceable patient-context extraction, conditional claim proposals, and a fail-closed verification gate are implemented for a narrow adult hypertension source set. Candidate claims remain unverified unless a narrow pinned-label safety rule applies. The current UI hides the uncalibrated confidence percentage; the full claim and citation presentation is planned for Step 7. See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for completion gates and progress, and [datasets/DATASET_GUIDE.md](datasets/DATASET_GUIDE.md) for the local data inventory.
+Versioned guideline and drug-label retrieval, traceable patient-context extraction, conditional claim proposals, and a fail-closed verification gate are implemented for a narrow adult hypertension source set. Candidate claims remain unverified unless a narrow pinned-label safety rule applies. The report UI shows each claim's status, conditions, missing checks, and source section/date; it does not show an uncalibrated confidence percentage. See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for completion gates and progress, and [datasets/DATASET_GUIDE.md](datasets/DATASET_GUIDE.md) for the local data inventory.
 
 ## Run locally
 
@@ -21,6 +21,8 @@ python -m backend.main
 ```
 
 The API exposes `/health` and `/analyze`; the existing frontend is served at `/ui` on port 8000. Large datasets and database contents are local and excluded from Git. Copy `.env.example` to `.env` and supply keys in `.env`; never commit credentials.
+
+`/analyze` retains `ranked_diagnoses`, `overall_confidence` (an uncalibrated legacy retry score), and `claims`. The report also includes `differential` entries linked by claim ID, `unassigned_diagnostic_claim_ids`, `investigation_claim_ids`, `treatment_claim_ids`, `medication_safety`, `evidence_completeness`, and `verification_failures`. Claims and source passages remain the authoritative detail records for these IDs. The UI presents missing allergy and medication information as unknown, never as a safety clearance.
 
 ## Pinned authoritative sources
 
