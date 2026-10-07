@@ -2,6 +2,8 @@
 
 This document describes the implementation on the `claim-verification` branch. It is a research architecture for **clinician review of candidate findings**, not an autonomous diagnosis or prescribing system. The authoritative source set is deliberately limited to selected adult-hypertension recommendations and one amlodipine label. The code has broader graph and textbook retrieval, but those signals do not automatically verify a clinical claim.
 
+For one consolidated figure spanning the runtime, ingestion, trust boundary, and evaluation, see [the detailed architecture diagram](ARCHITECTURE_DIAGRAM.md).
+
 ## 1. System view
 
 ```mermaid

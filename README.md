@@ -12,7 +12,7 @@ The contribution being tested is an **evidence-linked claim workflow**: the mode
 - Typed diagnosis, investigation, treatment, and medication-warning claims with `supported`, `conflicting`, or `unverified` status, source IDs, conditions, and missing checks.
 - A six-case synthetic engineering evaluation comparing LLM-only, text-RAG, and graph-plus-text modes. It produces case-level errors, provenance, and a blinded review packet.
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for diagrams and implementation detail, [SAMPLE_CASES.md](SAMPLE_CASES.md) for copyable inputs, and [evaluation/README.md](evaluation/README.md) for metric definitions.
+See the [detailed architecture diagram](ARCHITECTURE_DIAGRAM.md) and [architecture explanation](ARCHITECTURE.md), [SAMPLE_CASES.md](SAMPLE_CASES.md) for copyable inputs, and [evaluation/README.md](evaluation/README.md) for metric definitions.
 
 ## Architecture at a glance
 
