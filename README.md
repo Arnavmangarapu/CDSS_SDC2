@@ -14,6 +14,8 @@ The contribution being tested is an **evidence-linked claim workflow**: the mode
 
 See the [detailed architecture diagram](ARCHITECTURE_DIAGRAM.md) and [architecture explanation](ARCHITECTURE.md), [SAMPLE_CASES.md](SAMPLE_CASES.md) for copyable inputs, and [evaluation/README.md](evaluation/README.md) for metric definitions.
 
+A [research manuscript draft](paper/MANUSCRIPT.md) describes the implementation and six-case synthetic feasibility run. Its [aggregate results snapshot](paper/RESULTS_SNAPSHOT.json) preserves the reported counters and provenance hashes. The manuscript does not claim clinical validation.
+
 ## Architecture at a glance
 
 ```mermaid
