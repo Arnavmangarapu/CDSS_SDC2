@@ -61,9 +61,20 @@ def summarize(cases_path: Path, run_dir: Path) -> dict:
             if row.get("status") == "ok" else "run_error"
             for row in mode_rows
         )
+        overall = {}
+        for rank in ("diagnostic_top1", "diagnostic_top3"):
+            value = metrics["modes"][mode][rank]
+            step_numerator = sum(item["top1" if rank == "diagnostic_top1" else "top3"]["numerator"]
+                                 for item in steps.values())
+            if step_numerator != value["numerator"]:
+                raise ValueError(f"{mode} {rank} differs between per-step and main scorer")
+            overall[rank] = {**value, "wilson_95": wilson_interval(value["numerator"], value["denominator"])}
         per_mode[mode] = {
             "metrics": metrics["modes"][mode],
+            "overall_diagnosis_agreement": overall,
             "exam_step": steps,
+            "completed_without_ranked_diagnosis": sum(item["completed_without_ranked_diagnosis"]
+                                                      for item in steps.values()),
             "synthesis_provider_counts": dict(sorted(provider_counts.items())),
             "graph_candidates_total": sum(row.get("retrieval", {}).get("graph_candidates", 0) for row in mode_rows),
             "authoritative_passages_total": sum(row.get("retrieval", {}).get("authoritative_passages", 0) for row in mode_rows),

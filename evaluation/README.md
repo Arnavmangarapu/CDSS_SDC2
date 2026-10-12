@@ -8,11 +8,14 @@ The local [MedQA](https://github.com/jind11/MedQA) USMLE `test.jsonl` file is an
 
 The adapter sends only the vignette stem to `/analyze`: answer choices, keyed answer, and terminal diagnosis question are withheld. The answer is available only to the scorer. It is a single exact normalized alias, so synonymous diagnoses can count as misses. This is **generative answer agreement** on a selected public examination subset, not multiple-choice accuracy, independent clinical diagnosis adjudication, or patient-case validation. The public test questions may also have appeared in provider training data; this cannot be ruled out. The pinned guideline and label corpus is limited to hypertension and amlodipine, so most selected questions are outside its supported source scope.
 
+The 13 October run completed 108/108 case–mode analyses. Strict rank-1 agreement was 19/36 (LLM only), 12/36 (text RAG), and 14/36 (graph plus text); rank-3 agreement was 19/36, 13/36, and 14/36. Completed reports with no ranked diagnosis numbered 1, 8, and 13. The graph arm returned zero disease candidates for every exam case. Provider identity differed across modes for eight cases after Gemini Flash Lite rate limits and fallback to Gemini Flash, so these observed mode differences do not establish a retrieval effect. Citation identity matched 22/22 and 10/10 emitted uses in the two retrieval arms; clinical relevance was not adjudicated. [The aggregate result snapshot](../paper/MEDQA_EXAM_PILOT_RESULTS.json) contains per-step and overall denominators, descriptive Wilson intervals, provider counts, and run hashes without question text or answer keys. Replay of the saved results produced byte-identical `metrics.json`.
+
 With the original MedQA test file in the documented local path, regenerate and run the frozen set:
 
 ```bash
 python -m evaluation.medqa_adapter --output evaluation/runs/medqa-us-diagnosis-v1/cases.json
 python -m evaluation.run --cases evaluation/runs/medqa-us-diagnosis-v1/cases.json --output evaluation/runs/medqa-us-diagnosis-v1-results --review-sample-size 1000
+python -m evaluation.summarize_medqa --cases evaluation/runs/medqa-us-diagnosis-v1/cases.json --run evaluation/runs/medqa-us-diagnosis-v1-results --output paper/MEDQA_EXAM_PILOT_RESULTS.json
 ```
 
 Use fresh output paths for reruns; both commands refuse to overwrite existing artifacts. Raw MedQA questions, derived vignette text, answer keys, and generated reports stay in ignored `evaluation/runs/`. Only the selection protocol, metadata, and aggregate result snapshot are committed. Warning sensitivity, retrieval Hit@k, claim-support accuracy, and unsafe-option rate cannot be estimated from these diagnosis answer keys.

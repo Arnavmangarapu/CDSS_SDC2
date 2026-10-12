@@ -1,12 +1,13 @@
 # Multi-disease evaluation plan
 
-**Status (12 October 2026):** exploratory four-condition diagnostic pilot performed; the full benchmark and clinical validation remain pending. Execute remaining numbered stages one at a time, record each result, and commit that stage before starting the next.
+**Status (13 October 2026):** exploratory four-condition synthetic pilot and separate MedQA exam-vignette pilot performed; the full clinician-adjudicated benchmark and clinical validation remain pending. Execute remaining numbered stages one at a time, record each result, and commit that stage before starting the next.
 
 ### Progress against this plan
 
-- **Completed pilot subset:** 12 versioned diagnosis-withheld synthetic cases across four intended conditions; all 36 case–mode analyses completed. Strict per-disease alias counts, citation identity, provider traces, zero graph-candidate finding, replay, and 51 passing engineering tests are documented in [the pilot result snapshot](../paper/MULTIDISEASE_PILOT_RESULTS.json) and both paper drafts.
+- **Completed pilot subset:** 12 versioned diagnosis-withheld synthetic cases across four intended conditions; all 36 case–mode analyses completed. Strict per-disease alias counts, citation identity, provider traces, zero graph-candidate finding, and replay are documented in [the pilot result snapshot](../paper/MULTIDISEASE_PILOT_RESULTS.json) and both paper drafts. The current engineering suite passed 57 tests after the MedQA additions.
+- **Completed external exam-vignette subset:** a source-hash-locked, diagnosis-prompt selection of 36 MedQA US test questions was frozen before inference. All 108 case–mode analyses completed; strict keyed-answer rank-1 agreement was 19/36, 12/36, and 14/36, with more empty differentials in retrieval arms. The [selection manifest](medqa_selection.v1.json), [aggregate snapshot](../paper/MEDQA_EXAM_PILOT_RESULTS.json), and [method notes](README.md) document the procedure, per-step results, provider mismatch, zero graph candidates, and limits. These are exam questions, not patient cases.
 - **Partially completed stages 2, 4, 5, 7, and 8:** diagnostic-case schema, per-disease top-1/top-3 counts with descriptive Wilson intervals, live run, replay, and manuscript reporting. Provider fallback was **not** disabled; two cases had mismatched synthesis providers across modes. The local graph returned no phenotype-based disease candidates, so this pilot does not test graph benefit.
-- **Still pending:** Stage 0 formal preregistered protocol and sample-size calculation; Stage 1 multi-disease pinned sources and labels; the planned 200-case set; independent clinical adjudication; ranked retrieval relevance labels/Hit@k; positive multi-disease medication-safety cases; robustness and fault-injection matrix; a controlled fixed-model ablation. The 12-case pilot must not be presented as completion of these stages.
+- **Still pending:** Stage 0 formal preregistered protocol and sample-size calculation; Stage 1 multi-disease pinned sources and labels; the planned 200-case set; independent clinical adjudication; ranked retrieval relevance labels/Hit@k; positive multi-disease medication-safety cases; robustness and fault-injection matrix; a controlled fixed-model ablation. Neither pilot completes these stages.
 
 ## 1. Aim and current starting point
 

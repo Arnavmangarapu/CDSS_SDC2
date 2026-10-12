@@ -34,7 +34,8 @@ def test_exam_summary_scores_steps_and_excludes_raw_content(tmp_path, monkeypatc
                          "provider_trace": {"fusion": {"provider": "test", "model": "test"}}})
     write_jsonl(run / "case_results.jsonl", rows)
     (run / "metrics.json").write_text(json.dumps({
-        "modes": {mode: {"diagnostic_top1": {"numerator": 1, "denominator": 2}}
+        "modes": {mode: {"diagnostic_top1": {"numerator": 1, "denominator": 2},
+                         "diagnostic_top3": {"numerator": 1, "denominator": 2}}
                   for mode in ("llm_only", "text_rag", "graph_text")},
         "diagnostic_reference_note": "exam", "provider_consistency": {
             "matched_case_ids": ["one", "two"], "mismatched_case_ids": [], "unknown_case_ids": []}}), encoding="utf-8")

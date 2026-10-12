@@ -14,7 +14,7 @@ The contribution being tested is an **evidence-linked claim workflow**: the mode
 
 See the [detailed architecture diagram](ARCHITECTURE_DIAGRAM.md) and [architecture explanation](ARCHITECTURE.md), [SAMPLE_CASES.md](SAMPLE_CASES.md) for copyable inputs, and [evaluation/README.md](evaluation/README.md) for metric definitions.
 
-A [research manuscript draft](paper/MANUSCRIPT.md) describes the implementation and three exploratory evaluations. The [six-case snapshot](paper/RESULTS_SNAPSHOT.json) and [synthetic pilot snapshot](paper/MULTIDISEASE_PILOT_RESULTS.json) preserve prior counters and provenance hashes. The [MedQA selection manifest](evaluation/medqa_selection.v1.json) records the external exam-pilot protocol; the raw questions and generated reports remain local. The manuscript does not claim clinical validation.
+A [research manuscript draft](paper/MANUSCRIPT.md) describes the implementation and three exploratory evaluations. The [six-case snapshot](paper/RESULTS_SNAPSHOT.json), [synthetic pilot snapshot](paper/MULTIDISEASE_PILOT_RESULTS.json), and [MedQA exam-pilot snapshot](paper/MEDQA_EXAM_PILOT_RESULTS.json) preserve counters and provenance hashes. The [MedQA selection manifest](evaluation/medqa_selection.v1.json) records the external exam-pilot protocol; raw questions and generated reports remain local. The manuscript does not claim clinical validation.
 
 The [detailed paper draft following the supplied Neural Networks section template](paper/NEURAL_NETWORKS_PAPER_DRAFT.md) expands the methodology, dataset, results, discussion, references, and supplementary reproducibility notes. Author and declaration fields remain for the actual contributors to complete.
 
@@ -91,7 +91,7 @@ Run the frozen synthetic comparison after preparing the local stores and pinned 
 
 ```bash
 python -m evaluation.run --output evaluation/runs/my-run
-python -m pytest -q tests/
+PYTHONPATH=. python -m pytest -q tests backend/tests
 ```
 
 Each run writes `metrics.json`, `case_errors.jsonl`, captured reports, a source/model provenance manifest, and a blinded claim-review packet under ignored `evaluation/runs/`. Re-score a capture without provider calls using `--replay`; see [evaluation/README.md](evaluation/README.md).
@@ -102,9 +102,11 @@ In the 2026-10-07 local six-case engineering run, exact alias top-1 matches were
 
 In a separate 2026-10-12 four-condition synthetic pilot, diagnosis names were withheld from 12 cases (three per condition). Exact matches to provisional author labels were 10/12, 9/12, and 10/12 across the three modes. All 36 analyses completed, but the graph retrieved **zero disease candidates**; two cases used different synthesis providers across modes. The [pilot snapshot](paper/MULTIDISEASE_PILOT_RESULTS.json) and [evaluation notes](evaluation/README.md) report per-condition denominators and limitations. These pilot counts also cannot establish clinical diagnostic accuracy or a graph benefit.
 
+In a 2026-10-13 MedQA test-split pilot, a [checksum-locked selection](evaluation/medqa_selection.v1.json) chose 36 diagnosis-prompt exam vignettes before inference. The answer choices and keyed answers were withheld from the model. All 108 analyses completed; strict rank-1 exam-answer agreement was 19/36 (LLM only), 12/36 (text RAG), and 14/36 (graph plus text). Completed reports with empty ranked diagnoses numbered 1, 8, and 13. The graph retrieved zero disease candidates, and synthesis providers differed across modes for eight cases. The [aggregate snapshot](paper/MEDQA_EXAM_PILOT_RESULTS.json) and [method notes](evaluation/README.md) give per-step counts, hashes, and limits. These are medical-exam questions, **not** real patient encounters or clinical diagnostic-accuracy estimates.
+
 ## Research framing and boundaries
 
-A defensible description for a methods or feasibility manuscript is **“an evidence-linked Graph-RAG prototype for clinician-facing differential and conditional treatment review in a limited adult-hypertension source domain.”** The current work demonstrates an implemented provenance and abstention workflow plus a reproducible synthetic evaluation. It does not demonstrate improved diagnosis, safe medicine selection, calibrated probabilities, clinician agreement, or patient outcomes. Those claims require a larger, independently labeled dataset, blinded clinician review of claims and safety, controlled model comparisons, and prospective evaluation. The pinned source set and case labels have not yet had independent clinical review.
+A defensible description for a methods or feasibility manuscript is **“an evidence-linked Graph-RAG prototype for clinician-facing differential and conditional treatment review in a limited adult-hypertension source domain.”** The current work demonstrates an implemented provenance and abstention workflow plus reproducible synthetic and exam-vignette evaluations. It does not demonstrate improved patient diagnosis, safe medicine selection, calibrated probabilities, clinician agreement, or patient outcomes. Those claims require a larger, independently labeled patient-case dataset, blinded clinician review of claims and safety, controlled model comparisons, and prospective evaluation. The pinned source set and clinical case labels have not yet had independent clinical review.
 
 Raw case text is sent to configured external LLM providers, and selected terms may be sent to Serper when its key is enabled. The prototype has no clinical deployment controls or patient-data governance. Use synthetic or appropriately de-identified data in local demonstrations.
 
