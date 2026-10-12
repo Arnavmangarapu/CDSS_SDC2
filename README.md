@@ -16,6 +16,8 @@ See the [detailed architecture diagram](ARCHITECTURE_DIAGRAM.md) and [architectu
 
 A [research manuscript draft](paper/MANUSCRIPT.md) describes the implementation and six-case synthetic feasibility run. Its [aggregate results snapshot](paper/RESULTS_SNAPSHOT.json) preserves the reported counters and provenance hashes. The manuscript does not claim clinical validation.
 
+The [detailed paper draft following the supplied Neural Networks section template](paper/NEURAL_NETWORKS_PAPER_DRAFT.md) expands the methodology, dataset, results, discussion, references, and supplementary reproducibility notes. Author and declaration fields remain for the actual contributors to complete.
+
 ## Architecture at a glance
 
 ```mermaid
