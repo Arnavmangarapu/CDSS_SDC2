@@ -10,11 +10,11 @@ The contribution being tested is an **evidence-linked claim workflow**: the mode
 - Extraction of stated patient facts and missing information, including allergy status, current medicines, blood pressure, selected labs, pregnancy status, and known hypertension.
 - Retrieval from Neo4j graph relations, Qdrant textbook passages, and separately indexed versioned NICE and DailyMed passages. DrugCentral associations and optional Serper snippets contribute candidate signals, not verified citations.
 - Typed diagnosis, investigation, treatment, and medication-warning claims with `supported`, `conflicting`, or `unverified` status, source IDs, conditions, and missing checks.
-- A six-case synthetic safety/boundary evaluation and a separate 12-case, four-condition diagnostic pilot comparing LLM-only, text-RAG, and graph-plus-text modes. They produce case-level errors, provenance, and blinded review packets.
+- A six-case synthetic safety/boundary evaluation, a separate 12-case four-condition diagnostic pilot, and a checksum-locked 36-vignette MedQA exam pilot comparing LLM-only, text-RAG, and graph-plus-text modes. They produce case-level errors, provenance, and blinded review packets.
 
 See the [detailed architecture diagram](ARCHITECTURE_DIAGRAM.md) and [architecture explanation](ARCHITECTURE.md), [SAMPLE_CASES.md](SAMPLE_CASES.md) for copyable inputs, and [evaluation/README.md](evaluation/README.md) for metric definitions.
 
-A [research manuscript draft](paper/MANUSCRIPT.md) describes the implementation, six-case safety/boundary run, and four-condition diagnostic pilot. The [six-case snapshot](paper/RESULTS_SNAPSHOT.json) and [pilot snapshot](paper/MULTIDISEASE_PILOT_RESULTS.json) preserve the reported counters and provenance hashes. The manuscript does not claim clinical validation.
+A [research manuscript draft](paper/MANUSCRIPT.md) describes the implementation and three exploratory evaluations. The [six-case snapshot](paper/RESULTS_SNAPSHOT.json) and [synthetic pilot snapshot](paper/MULTIDISEASE_PILOT_RESULTS.json) preserve prior counters and provenance hashes. The [MedQA selection manifest](evaluation/medqa_selection.v1.json) records the external exam-pilot protocol; the raw questions and generated reports remain local. The manuscript does not claim clinical validation.
 
 The [detailed paper draft following the supplied Neural Networks section template](paper/NEURAL_NETWORKS_PAPER_DRAFT.md) expands the methodology, dataset, results, discussion, references, and supplementary reproducibility notes. Author and declaration fields remain for the actual contributors to complete.
 
@@ -33,7 +33,7 @@ The verifier accepts only passages that match the pinned source manifest and loc
 
 ## Local setup
 
-The repository contains code, a versioned source manifest, and synthetic test cases. It **does not include** the large biomedical datasets, Qdrant or Neo4j contents, or the raw NICE/DailyMed snapshots. You need the local inputs described in [datasets/DATASET_GUIDE.md](datasets/DATASET_GUIDE.md) to reproduce the full pipeline. Respect each source's reuse terms before obtaining or redistributing it.
+The repository contains code, a versioned source manifest, synthetic test cases, and the MedQA selection protocol. It **does not include** the large biomedical datasets, MedQA exam questions, Qdrant or Neo4j contents, or the raw NICE/DailyMed snapshots. You need the local inputs described in [datasets/DATASET_GUIDE.md](datasets/DATASET_GUIDE.md) to reproduce the full pipeline. Respect each source's reuse terms before obtaining or redistributing it.
 
 1. Clone and install dependencies (the current local evaluation used Python 3.14):
 
