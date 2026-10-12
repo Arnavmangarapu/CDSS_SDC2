@@ -2,6 +2,32 @@
 
 For the proposed full multi-condition benchmark, staged implementation, metric definitions, and paper reporting, see [MULTI_DISEASE_EVALUATION_PLAN.md](MULTI_DISEASE_EVALUATION_PLAN.md). The synthetic pilot and the separate MedQA exam-vignette pilot are exploratory subsets of that broader plan.
 
+## Pinned-source retrieval metrics (13 October 2026)
+
+The MedQA answer key does **not** label relevant guideline or label passages, so Precision@k, Recall@k, Hit@k, MRR, nDCG, context relevance, and context recall cannot be inferred from that exam run. A separate [frozen 10-query known-passage probe set](retrieval_probes.v1.json) tests the production authoritative-source retriever against its entire **26-passage pinned corpus** (17 NICE NG136 sections, 9 DailyMed amlodipine label chunks). The developer wrote the queries and source-section judgments from that same corpus before running retrieval. Grades are 2 for a direct-answer passage, 1 for related but insufficient, and 0 for all unlisted passages. Required fact IDs link to grade-2 passages. These are engineering labels, **not** blinded or clinician-adjudicated relevance judgments. The test does not cover textbook-vector or graph retrieval.
+
+The retriever currently returns five guideline hits followed by five drug-label hits, without merging their scores into a global rank. All metrics use that **actual context order**. Binary Precision@k, Recall@k, Hit@k, and MRR count only grade-2 passages; graded nDCG uses gains `2^grade − 1` with a logarithmic rank discount. Precision@k divides by k, even if fewer than k passages are returned. Recall@k is restricted to **all developer-judged direct-answer passages within this 26-passage corpus**, not all relevant clinical literature. Context relevance is the fraction of the full retrieved context that is directly answer bearing; with ten passages per query here, it equals pooled Precision@10. Context recall is the fraction of 13 developer-listed required facts whose linked source passage appears anywhere in the full context. These context metrics are transparent annotation-based measures, not LLM-judge scores.
+
+| Measure | @1 | @3 | @5 | @10 |
+| --- | ---: | ---: | ---: | ---: |
+| Precision@k | 6/10 (0.60) | 7/30 (0.233) | 8/50 (0.16) | 12/100 (0.12) |
+| Micro Recall@k | 6/12 (0.50) | 7/12 (0.583) | 8/12 (0.667) | 12/12 (1.00) |
+| Hit Rate@k | 6/10 (0.60) | 6/10 (0.60) | 6/10 (0.60) | 10/10 (1.00) |
+| MRR@k | 0.600 | 0.600 | 0.600 | 0.667 |
+| Mean nDCG@k | 0.600 | 0.495 | 0.529 | 0.670 |
+
+All **10/10 retrieval queries completed**. Full-context relevance was **12/100** directly answer-bearing passages; required-fact coverage was **13/13**. The six guideline-focused queries placed a direct-answer passage at rank 1, while all four amlodipine-label queries placed theirs at rank 6 because the five guideline hits come first. The 13/13 fact coverage is expected to be optimistic for known-passage questions built from this small corpus; it is not evidence that real clinical cases receive all needed evidence. Median retrieval-only query time was 41.5 ms and p95 was 126.4 ms on this local run, excluding model initialization and network/provider generation. [The aggregate snapshot](../paper/RETRIEVAL_PROBE_RESULTS.json) gives exact denominators, per-query counters, source and output hashes, definitions, and unavailable generation metrics. Replaying the saved ordered source IDs produced a byte-identical `metrics.json`.
+
+With the pinned snapshots and both Qdrant source collections ready, run and replay using fresh output paths:
+
+```bash
+python -m evaluation.run_retrieval --output evaluation/runs/retrieval-probes-v1
+python -m evaluation.run_retrieval --replay evaluation/runs/retrieval-probes-v1/retrieval_records.jsonl --output evaluation/runs/retrieval-probes-v1-replay
+python -m evaluation.summarize_retrieval --run evaluation/runs/retrieval-probes-v1 --replay-metrics evaluation/runs/retrieval-probes-v1-replay/metrics.json --output paper/RETRIEVAL_PROBE_RESULTS.json
+```
+
+Answer faithfulness, answer relevance and completeness, clinical task completion, and cost per query are **unavailable** here because no independent generated-answer judgments, workflow outcomes, or cost traces exist. The saved MedQA evaluation separately reports diagnosis answer agreement, completion, and end-to-end latency; citation identity is not semantic faithfulness.
+
 ## MedQA US test exam-vignette pilot (13 October 2026)
 
 The local [MedQA](https://github.com/jind11/MedQA) USMLE `test.jsonl` file is an **exam question split**, not a patient-record dataset. The [adapter](medqa_adapter.py) requires SHA-256 `cfa75cbcc53c29b023752b0a395ff49d8202121041392735ae44771a5ec734a3` and scans its 1,273 rows. The frozen eligibility rule requires an exact terminal “most likely diagnosis?” prompt, a keyed answer equal to its answer option, at least 100 characters of vignette before that prompt, no literal answer in the vignette, and a recognized exam step. This yields 89 eligible cases: 27 Step 1 and 62 Step 2/3. Before seeing model outputs, SHA-256 sorting with seed `cdss-medqa-diagnosis-v1` selected 12 and 24 cases respectively. [The committed selection manifest](medqa_selection.v1.json) records the source hash, rules, counts, and zero-based source row indices. All 36 selected answer strings are distinct.
