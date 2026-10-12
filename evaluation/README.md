@@ -1,10 +1,24 @@
 # Step 8 evaluation
 
-For the proposed multi-condition benchmark, staged implementation, metric definitions, and paper reporting, see [MULTI_DISEASE_EVALUATION_PLAN.md](MULTI_DISEASE_EVALUATION_PLAN.md). The plan has not been executed.
+For the proposed full multi-condition benchmark, staged implementation, metric definitions, and paper reporting, see [MULTI_DISEASE_EVALUATION_PLAN.md](MULTI_DISEASE_EVALUATION_PLAN.md). Only the diagnostic pilot described below has been executed.
+
+## Four-condition synthetic diagnostic pilot (12 October 2026)
+
+A **pilot subset** of that plan has now run on [12 author-built, diagnosis-withheld cases](cases.multidisease-pilot.v1.json): three each for hypertension, chronic asthma, type 2 diabetes, and GORD/dyspepsia. To rerun locally with the documented graph/vector services, pinned snapshots, and configured providers:
+
+```bash
+python -m evaluation.run --cases evaluation/cases.multidisease-pilot.v1.json --output evaluation/runs/new-multidisease-pilot --review-sample-size 1000
+```
+
+The 12 October run completed 36/36 analyses. Strict normalized exact-alias matches at rank 1 were 10/12 (LLM only), 9/12 (text RAG), and 10/12 (graph plus text); rank-3 counts were identical. [The versioned result snapshot](../paper/MULTIDISEASE_PILOT_RESULTS.json) provides disease-level counts, descriptive Wilson intervals, per-case rank-1 strings, provider traces, and hashes. The local graph returned zero disease candidates in all pilot cases; an audit found no phenotype-type relations for the current disease query. Two cases used different synthesis providers across modes, so differences between arms are not evidence of graph benefit. Citation identity matched 30/30 text-RAG and 26/26 graph-plus-text uses; semantic support was not adjudicated.
+
+These cases have **provisional author-intended labels**, no clinician reference standard, no negative/mimic sample, and only three examples per condition. The application's pinned authoritative corpus still covers adult hypertension and one amlodipine label. The pilot contains no positive warning opportunities or independently labeled relevant passages, so warning sensitivity, retrieval Hit@k/Recall@k, claim-support precision, unsafe-option rate, and clinical diagnostic accuracy remain unavailable. The archived six-case fixture results below remain a separate safety/boundary engineering check.
+
+## Historical six-case fixture evaluation
 
 This is a reproducible **engineering evaluation on six hand-authored synthetic cases**, not a clinical validation set. Every reference diagnosis is stated in its case text. Top-k results measure recognition on these fixtures, not diagnostic performance on patients. The cases live outside the indexed textbook and pinned source corpus. The runner also checks that no case text appears verbatim in a pinned passage.
 
-## Run
+### Run
 
 From the project root, with the documented Python dependencies and local Neo4j/Qdrant services configured:
 
@@ -22,7 +36,7 @@ python -m evaluation.run --replay evaluation/runs/full-001/case_results.jsonl --
 
 The runner fails closed if the pinned source snapshots are missing or their checksums no longer match the manifest. A new run never overwrites an existing output directory. Generated runs are Git ignored; retain a run directory if reporting its numbers.
 
-## Artifacts and interpretation
+### Artifacts and interpretation
 
 - `run_manifest.json`: dataset version/hash, source manifest hash and document dates, prompt hashes, configured model IDs, actual provider trace in each case result, Git commit and dirty state, run settings, and command. `openrouter/free` can change underlying models; the provider trace cannot resolve that model version.
 - `metrics.json`: per-mode numerators, denominators, values, and reasons when a metric is unavailable. Failed runs are separate from successful-case metrics and appear in `failed_cases`.
@@ -44,6 +58,6 @@ Claim support accuracy, unsupported-claim rate, and unsafe-option rate remain **
 
 Allowed support labels are `supported`, `unsupported`, and `uncertain`; option safety labels are `safe`, `unsafe`, and `uncertain`. For non-treatment claims use `uncertain` for option safety. Each reviewer should check cited source section, date, population, conditions, and patient facts, then record their answer independently. Unanimous two-reviewer items can be scored; disagreements are listed and excluded until a documented reconciliation. Use the resulting file with `--adjudications path/to/reviews.jsonl --replay ... --output ...`. Do not interpret synthetic fixture performance or provisional metrics as patient safety, calibrated probability, or outcome benefit.
 
-## Source and design limits
+### Source and design limits
 
 The pinned corpus covers NICE NG136 recommendations for adult hypertension (England; snapshot updated 2026-02-26) and one DailyMed amlodipine label (United States; effective 2026-01-01). The source manifest records URLs, checksums, license notes, and sections. The two source jurisdictions differ. The medication rules cover only amlodipine sensitivity and its simvastatin interaction; other contraindications and interactions are untested. The synthetic set is tiny, contains mostly known hypertension, and includes a pregnancy and GERD boundary case. It has no clinician-selected differential diagnoses, real-world prevalence, complex missingness, prospective workflow, or patient outcomes. Independent clinician review of the source choices, case labels, claim support, and treatment safety remains pending.

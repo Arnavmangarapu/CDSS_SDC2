@@ -10,11 +10,11 @@ The contribution being tested is an **evidence-linked claim workflow**: the mode
 - Extraction of stated patient facts and missing information, including allergy status, current medicines, blood pressure, selected labs, pregnancy status, and known hypertension.
 - Retrieval from Neo4j graph relations, Qdrant textbook passages, and separately indexed versioned NICE and DailyMed passages. DrugCentral associations and optional Serper snippets contribute candidate signals, not verified citations.
 - Typed diagnosis, investigation, treatment, and medication-warning claims with `supported`, `conflicting`, or `unverified` status, source IDs, conditions, and missing checks.
-- A six-case synthetic engineering evaluation comparing LLM-only, text-RAG, and graph-plus-text modes. It produces case-level errors, provenance, and a blinded review packet.
+- A six-case synthetic safety/boundary evaluation and a separate 12-case, four-condition diagnostic pilot comparing LLM-only, text-RAG, and graph-plus-text modes. They produce case-level errors, provenance, and blinded review packets.
 
 See the [detailed architecture diagram](ARCHITECTURE_DIAGRAM.md) and [architecture explanation](ARCHITECTURE.md), [SAMPLE_CASES.md](SAMPLE_CASES.md) for copyable inputs, and [evaluation/README.md](evaluation/README.md) for metric definitions.
 
-A [research manuscript draft](paper/MANUSCRIPT.md) describes the implementation and six-case synthetic feasibility run. Its [aggregate results snapshot](paper/RESULTS_SNAPSHOT.json) preserves the reported counters and provenance hashes. The manuscript does not claim clinical validation.
+A [research manuscript draft](paper/MANUSCRIPT.md) describes the implementation, six-case safety/boundary run, and four-condition diagnostic pilot. The [six-case snapshot](paper/RESULTS_SNAPSHOT.json) and [pilot snapshot](paper/MULTIDISEASE_PILOT_RESULTS.json) preserve the reported counters and provenance hashes. The manuscript does not claim clinical validation.
 
 The [detailed paper draft following the supplied Neural Networks section template](paper/NEURAL_NETWORKS_PAPER_DRAFT.md) expands the methodology, dataset, results, discussion, references, and supplementary reproducibility notes. Author and declaration fields remain for the actual contributors to complete.
 
@@ -96,9 +96,11 @@ python -m pytest -q tests/
 
 Each run writes `metrics.json`, `case_errors.jsonl`, captured reports, a source/model provenance manifest, and a blinded claim-review packet under ignored `evaluation/runs/`. Re-score a capture without provider calls using `--replay`; see [evaluation/README.md](evaluation/README.md).
 
-The [multi-disease evaluation plan](evaluation/MULTI_DISEASE_EVALUATION_PLAN.md) specifies the next staged benchmark, including separate diagnostic and management cases, source expansion, adjudication, per-disease metrics, safety challenges, and paper-ready reporting. It is a plan; its proposed tests have not yet been run.
+The [multi-disease evaluation plan](evaluation/MULTI_DISEASE_EVALUATION_PLAN.md) specifies the full staged benchmark, including separate diagnostic and management cases, source expansion, adjudication, per-disease metrics, safety challenges, and paper-ready reporting. Its diagnostic pilot is complete; the larger benchmark and clinician review remain pending.
 
 In the 2026-10-07 local six-case engineering run, exact alias top-1 matches were 1/6 (LLM-only), 4/6 (text-RAG), and 5/6 (graph plus text). Pinned citation identity matched for 13/13 text-RAG and 17/17 graph-plus-text citation uses. These **are not clinical accuracy or claim-support results**: diagnoses were stated in the synthetic inputs, the sample is tiny, and synthesis providers differed or were unknown across modes for three cases. Claim-support accuracy and unsafe-option rate remain unavailable without independent clinician adjudication. The run also exposed an allergy extraction error documented in [SAMPLE_CASES.md](SAMPLE_CASES.md).
+
+In a separate 2026-10-12 four-condition synthetic pilot, diagnosis names were withheld from 12 cases (three per condition). Exact matches to provisional author labels were 10/12, 9/12, and 10/12 across the three modes. All 36 analyses completed, but the graph retrieved **zero disease candidates**; two cases used different synthesis providers across modes. The [pilot snapshot](paper/MULTIDISEASE_PILOT_RESULTS.json) and [evaluation notes](evaluation/README.md) report per-condition denominators and limitations. These pilot counts also cannot establish clinical diagnostic accuracy or a graph benefit.
 
 ## Research framing and boundaries
 
