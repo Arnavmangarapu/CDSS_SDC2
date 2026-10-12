@@ -1,6 +1,21 @@
 # Step 8 evaluation
 
-For the proposed full multi-condition benchmark, staged implementation, metric definitions, and paper reporting, see [MULTI_DISEASE_EVALUATION_PLAN.md](MULTI_DISEASE_EVALUATION_PLAN.md). Only the diagnostic pilot described below has been executed.
+For the proposed full multi-condition benchmark, staged implementation, metric definitions, and paper reporting, see [MULTI_DISEASE_EVALUATION_PLAN.md](MULTI_DISEASE_EVALUATION_PLAN.md). The synthetic pilot and the separate MedQA exam-vignette pilot are exploratory subsets of that broader plan.
+
+## MedQA US test exam-vignette pilot (13 October 2026)
+
+The local [MedQA](https://github.com/jind11/MedQA) USMLE `test.jsonl` file is an **exam question split**, not a patient-record dataset. The [adapter](medqa_adapter.py) requires SHA-256 `cfa75cbcc53c29b023752b0a395ff49d8202121041392735ae44771a5ec734a3` and scans its 1,273 rows. The frozen eligibility rule requires an exact terminal “most likely diagnosis?” prompt, a keyed answer equal to its answer option, at least 100 characters of vignette before that prompt, no literal answer in the vignette, and a recognized exam step. This yields 89 eligible cases: 27 Step 1 and 62 Step 2/3. Before seeing model outputs, SHA-256 sorting with seed `cdss-medqa-diagnosis-v1` selected 12 and 24 cases respectively. [The committed selection manifest](medqa_selection.v1.json) records the source hash, rules, counts, and zero-based source row indices. All 36 selected answer strings are distinct.
+
+The adapter sends only the vignette stem to `/analyze`: answer choices, keyed answer, and terminal diagnosis question are withheld. The answer is available only to the scorer. It is a single exact normalized alias, so synonymous diagnoses can count as misses. This is **generative answer agreement** on a selected public examination subset, not multiple-choice accuracy, independent clinical diagnosis adjudication, or patient-case validation. The public test questions may also have appeared in provider training data; this cannot be ruled out. The pinned guideline and label corpus is limited to hypertension and amlodipine, so most selected questions are outside its supported source scope.
+
+With the original MedQA test file in the documented local path, regenerate and run the frozen set:
+
+```bash
+python -m evaluation.medqa_adapter --output evaluation/runs/medqa-us-diagnosis-v1/cases.json
+python -m evaluation.run --cases evaluation/runs/medqa-us-diagnosis-v1/cases.json --output evaluation/runs/medqa-us-diagnosis-v1-results --review-sample-size 1000
+```
+
+Use fresh output paths for reruns; both commands refuse to overwrite existing artifacts. Raw MedQA questions, derived vignette text, answer keys, and generated reports stay in ignored `evaluation/runs/`. Only the selection protocol, metadata, and aggregate result snapshot are committed. Warning sensitivity, retrieval Hit@k, claim-support accuracy, and unsafe-option rate cannot be estimated from these diagnosis answer keys.
 
 ## Four-condition synthetic diagnostic pilot (12 October 2026)
 
