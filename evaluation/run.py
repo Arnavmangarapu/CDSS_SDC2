@@ -217,7 +217,9 @@ def provenance(case_path: Path, dataset: dict, selected: list[dict],
     }
     return {
         "created_utc": datetime.now(timezone.utc).isoformat(),
-        "run_kind": "replay" if replay_path else "live_synthetic_evaluation",
+        "run_kind": "replay" if replay_path else (
+            "live_exam_vignette_evaluation" if dataset.get("reference_kind") == "medqa_exam_answer"
+            else "live_synthetic_evaluation"),
         "clinical_validation": False,
         "dataset_id": dataset["dataset_id"], "dataset_version": dataset["dataset_version"],
         "dataset_origin": dataset["origin"], "dataset_sha256": sha256(case_path),
@@ -295,14 +297,19 @@ def main() -> None:
                          args.replay, args.adjudications, args.max_retries)
     output.mkdir(parents=True)
     (output / "run_manifest.json").write_text(json.dumps(details, indent=2, default=str) + "\n", encoding="utf-8")
+    if dataset.get("reference_kind") == "medqa_exam_answer":
+        reference_note = (
+            "MedQA exam answer keys are not clinician-adjudicated patient diagnoses; "
+            "exact top-k matches are generative vignette answer agreement, not clinical accuracy"
+        )
+    elif all(case.get("diagnosis_disclosed", True) for case in cases):
+        reference_note = "All reference diagnoses are explicit in synthetic case text; top-k tests recognition only"
+    else:
+        reference_note = "Author-intended synthetic labels are not independently adjudicated; top-k is not clinical diagnostic accuracy"
     metric_payload = {
         "clinical_validation": False,
         "dataset_origin": dataset["origin"],
-        "diagnostic_reference_note": (
-            "All reference diagnoses are explicit in synthetic case text; top-k tests recognition only"
-            if all(case.get("diagnosis_disclosed", True) for case in cases)
-            else "Author-intended synthetic labels are not independently adjudicated; top-k is not clinical diagnostic accuracy"
-        ),
+        "diagnostic_reference_note": reference_note,
         "clinical_adjudication_note": "Support and unsafe-option metrics require two agreeing independent reviewers",
         "reviewed_item_count": metrics["reviewed_item_count"],
         "provider_consistency": metrics["provider_consistency"],

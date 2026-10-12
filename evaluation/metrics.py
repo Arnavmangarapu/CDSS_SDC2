@@ -23,7 +23,7 @@ def fraction(numerator: int, denominator: int, missing_reason: str) -> dict:
 
 
 def wilson_interval(numerator: int, denominator: int) -> list[float] | None:
-    """Descriptive 95% binomial interval; observations are synthetic cases."""
+    """Descriptive 95% binomial interval for the observed case sample."""
     if not denominator:
         return None
     z = 1.959963984540054
@@ -35,7 +35,7 @@ def wilson_interval(numerator: int, denominator: int) -> list[float] | None:
 
 
 def diagnostic_strata(cases: list[dict], records: list[dict]) -> dict:
-    """Score author-intended diagnostic labels by disease without hiding run failures."""
+    """Score reference labels by declared stratum without hiding run failures."""
     if not all(case.get("cohort") == "diagnostic" and case.get("disease_stratum") for case in cases):
         return {}
     rows_by_key = {(row.get("case_id"), row.get("mode")): row for row in records}
