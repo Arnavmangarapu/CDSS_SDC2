@@ -96,6 +96,8 @@ python -m pytest -q tests/
 
 Each run writes `metrics.json`, `case_errors.jsonl`, captured reports, a source/model provenance manifest, and a blinded claim-review packet under ignored `evaluation/runs/`. Re-score a capture without provider calls using `--replay`; see [evaluation/README.md](evaluation/README.md).
 
+The [multi-disease evaluation plan](evaluation/MULTI_DISEASE_EVALUATION_PLAN.md) specifies the next staged benchmark, including separate diagnostic and management cases, source expansion, adjudication, per-disease metrics, safety challenges, and paper-ready reporting. It is a plan; its proposed tests have not yet been run.
+
 In the 2026-10-07 local six-case engineering run, exact alias top-1 matches were 1/6 (LLM-only), 4/6 (text-RAG), and 5/6 (graph plus text). Pinned citation identity matched for 13/13 text-RAG and 17/17 graph-plus-text citation uses. These **are not clinical accuracy or claim-support results**: diagnoses were stated in the synthetic inputs, the sample is tiny, and synthesis providers differed or were unknown across modes for three cases. Claim-support accuracy and unsafe-option rate remain unavailable without independent clinician adjudication. The run also exposed an allergy extraction error documented in [SAMPLE_CASES.md](SAMPLE_CASES.md).
 
 ## Research framing and boundaries

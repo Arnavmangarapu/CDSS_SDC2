@@ -1,5 +1,7 @@
 # Step 8 evaluation
 
+For the proposed multi-condition benchmark, staged implementation, metric definitions, and paper reporting, see [MULTI_DISEASE_EVALUATION_PLAN.md](MULTI_DISEASE_EVALUATION_PLAN.md). The plan has not been executed.
+
 This is a reproducible **engineering evaluation on six hand-authored synthetic cases**, not a clinical validation set. Every reference diagnosis is stated in its case text. Top-k results measure recognition on these fixtures, not diagnostic performance on patients. The cases live outside the indexed textbook and pinned source corpus. The runner also checks that no case text appears verbatim in a pinned passage.
 
 ## Run
