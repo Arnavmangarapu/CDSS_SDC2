@@ -7,7 +7,7 @@ from datetime import date
 import pytest
 
 from backend.schemas.retrieval import GraphRetrievalResult
-from evaluation.metrics import MODES, provider_consistency, resolved_adjudications, review_id, score
+from evaluation.metrics import MODES, diagnostic_strata, provider_consistency, resolved_adjudications, review_id, score
 from evaluation.run import RetrievalAblation, load_cases, main, validate_matrix, write_jsonl
 from ingestion.authoritative_sources import build_passages, load_manifest
 
@@ -145,6 +145,37 @@ def test_frozen_cases_keep_reference_diagnoses_explicit():
     dataset, cases = load_cases(DEFAULT_CASES)
     assert dataset["dataset_version"] == "1.0.0"
     assert len(cases) == 6
+
+
+def test_multidisease_pilot_hides_aliases_and_covers_four_strata():
+    from pathlib import Path
+
+    dataset, cases = load_cases(Path("evaluation/cases.multidisease-pilot.v1.json"))
+    assert dataset["origin"].startswith("Hand-authored synthetic")
+    assert len(cases) == 12
+    assert {case["disease_stratum"] for case in cases} == {
+        "hypertension", "chronic_asthma", "type_2_diabetes", "gord"}
+    assert all(case["cohort"] == "diagnostic" and case["diagnosis_disclosed"] is False
+               for case in cases)
+
+
+def test_diagnostic_strata_keep_failure_denominators_and_macro_unavailable():
+    cases = [
+        {"case_id": "a", "cohort": "diagnostic", "disease_stratum": "alpha",
+         "reference_diagnosis_aliases": ["A"]},
+        {"case_id": "b", "cohort": "diagnostic", "disease_stratum": "beta",
+         "reference_diagnosis_aliases": ["B"]},
+    ]
+    records = [{"case_id": case["case_id"], "mode": mode, "status": "ok",
+                "report": {"ranked_diagnoses": [{"diagnosis": case["reference_diagnosis_aliases"][0]}]}}
+               for mode in MODES for case in cases]
+    records[-1] = {"case_id": "b", "mode": "graph_text", "status": "error"}
+    result = diagnostic_strata(cases, records)
+    assert result["llm_only"]["macro_top1"] == 1
+    assert result["llm_only"]["diseases"]["alpha"]["top1"]["numerator"] == 1
+    assert result["graph_text"]["diseases"]["beta"]["failed"] == 1
+    assert result["graph_text"]["diseases"]["beta"]["top1"]["value"] is None
+    assert result["graph_text"]["macro_top1"] is None
 
 
 def test_result_writer_serializes_source_dates(tmp_path):

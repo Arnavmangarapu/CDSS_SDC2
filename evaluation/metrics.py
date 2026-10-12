@@ -22,6 +22,62 @@ def fraction(numerator: int, denominator: int, missing_reason: str) -> dict:
     }
 
 
+def wilson_interval(numerator: int, denominator: int) -> list[float] | None:
+    """Descriptive 95% binomial interval; observations are synthetic cases."""
+    if not denominator:
+        return None
+    z = 1.959963984540054
+    p = numerator / denominator
+    z2 = z * z
+    center = (p + z2 / (2 * denominator)) / (1 + z2 / denominator)
+    width = z * math.sqrt(p * (1 - p) / denominator + z2 / (4 * denominator**2)) / (1 + z2 / denominator)
+    return [round(max(0.0, center - width), 4), round(min(1.0, center + width), 4)]
+
+
+def diagnostic_strata(cases: list[dict], records: list[dict]) -> dict:
+    """Score author-intended diagnostic labels by disease without hiding run failures."""
+    if not all(case.get("cohort") == "diagnostic" and case.get("disease_stratum") for case in cases):
+        return {}
+    rows_by_key = {(row.get("case_id"), row.get("mode")): row for row in records}
+    diseases = sorted({case["disease_stratum"] for case in cases})
+    output = {}
+    for mode in MODES:
+        strata = {}
+        for disease in diseases:
+            selected = [case for case in cases if case["disease_stratum"] == disease]
+            complete = top1 = top3 = 0
+            for case in selected:
+                row = rows_by_key.get((case["case_id"], mode), {})
+                report = row.get("report")
+                if row.get("status") != "ok" or not isinstance(report, dict):
+                    continue
+                complete += 1
+                accepted = {diagnosis_key(name) for name in case["reference_diagnosis_aliases"]}
+                predicted = [diagnosis_key(item.get("diagnosis", ""))
+                             for item in report.get("ranked_diagnoses", [])
+                             if item.get("diagnosis") and not item["diagnosis"].startswith("LLM synthesis unavailable")]
+                top1 += int(bool(predicted[:1] and predicted[0] in accepted))
+                top3 += int(any(name in accepted for name in predicted[:3]))
+            strata[disease] = {
+                "attempted": len(selected), "complete": complete, "failed": len(selected) - complete,
+                "top1": {**fraction(top1, complete, "No completed cases"),
+                         "wilson_95": wilson_interval(top1, complete)},
+                "top3": {**fraction(top3, complete, "No completed cases"),
+                         "wilson_95": wilson_interval(top3, complete)},
+            }
+        complete_strata = [row for row in strata.values() if row["complete"]]
+        macro_available = len(complete_strata) == len(diseases)
+        output[mode] = {
+            "diseases": strata,
+            "macro_top1": round(sum(row["top1"]["value"] for row in complete_strata) / len(diseases), 4)
+                          if macro_available else None,
+            "macro_top3": round(sum(row["top3"]["value"] for row in complete_strata) / len(diseases), 4)
+                          if macro_available else None,
+            "macro_unavailable_reason": None if macro_available else "At least one disease has no completed cases",
+        }
+    return output
+
+
 def review_id(case_id: str, claim: dict) -> str:
     identity = [case_id, claim.get("claim_type"), claim.get("text"), claim.get("applies_to"),
                 claim.get("conditions", []), claim.get("missing_checks", []),

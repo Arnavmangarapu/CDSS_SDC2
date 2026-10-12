@@ -17,7 +17,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from backend.schemas.retrieval import GraphRetrievalResult, OrchestratorResult, VectorRetrievalResult
-from evaluation.metrics import MODES, review_id, score
+from evaluation.metrics import MODES, diagnostic_strata, review_id, score
 from ingestion.authoritative_sources import DEFAULT_MANIFEST, build_passages, load_manifest
 
 
@@ -44,8 +44,14 @@ def load_cases(path: Path) -> tuple[dict, list[dict]]:
         aliases = item.get("reference_diagnosis_aliases")
         if not isinstance(aliases, list) or not aliases or not all(isinstance(name, str) and name for name in aliases):
             raise ValueError(f"Case {item['case_id']} lacks reference diagnosis aliases")
-        if not any(name.casefold() in item["case_text"].casefold() for name in aliases):
+        disclosed = item.get("diagnosis_disclosed", True)
+        if not isinstance(disclosed, bool):
+            raise ValueError(f"Case {item['case_id']} has invalid diagnosis_disclosed")
+        contains_alias = any(name.casefold() in item["case_text"].casefold() for name in aliases)
+        if disclosed and not contains_alias:
             raise ValueError(f"Case {item['case_id']} reference diagnosis is not explicit in its text")
+        if not disclosed and contains_alias:
+            raise ValueError(f"Case {item['case_id']} leaks a reference diagnosis alias in its text")
         warnings = item.get("expected_warning_types")
         if not isinstance(warnings, list) or any(name not in VALID_WARNINGS for name in warnings):
             raise ValueError(f"Case {item['case_id']} has unsupported warning labels")
@@ -292,11 +298,16 @@ def main() -> None:
     metric_payload = {
         "clinical_validation": False,
         "dataset_origin": dataset["origin"],
-        "diagnostic_reference_note": "Reference diagnoses are explicit in synthetic case text; top-k is not clinical diagnostic accuracy",
+        "diagnostic_reference_note": (
+            "All reference diagnoses are explicit in synthetic case text; top-k tests recognition only"
+            if all(case.get("diagnosis_disclosed", True) for case in cases)
+            else "Author-intended synthetic labels are not independently adjudicated; top-k is not clinical diagnostic accuracy"
+        ),
         "clinical_adjudication_note": "Support and unsafe-option metrics require two agreeing independent reviewers",
         "reviewed_item_count": metrics["reviewed_item_count"],
         "provider_consistency": metrics["provider_consistency"],
         "modes": metrics["modes"],
+        "diagnostic_strata": diagnostic_strata(cases, records),
     }
     (output / "metrics.json").write_text(json.dumps(metric_payload, indent=2) + "\n", encoding="utf-8")
     write_jsonl(output / "case_results.jsonl", records)
