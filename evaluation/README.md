@@ -2,6 +2,31 @@
 
 For the proposed full multi-condition benchmark, staged implementation, metric definitions, and paper reporting, see [MULTI_DISEASE_EVALUATION_PLAN.md](MULTI_DISEASE_EVALUATION_PLAN.md). The synthetic pilot and the separate MedQA exam-vignette pilot are exploratory subsets of that broader plan.
 
+## Frozen medication-safety and provenance challenges (13 October 2026)
+
+The [pre-run protocol](SAFETY_PROVENANCE_PROTOCOL.md) and [108 developer-labeled synthetic cases](med_safety_cases.v1.json) were committed before the benchmark. Nine strata have 12 cases each, including positive amlodipine allergy and current-simvastatin warnings, unknown/conflicting histories, stopped medication, different-drug allergy, lookalike names, and clean negatives. The two tested paths supply a **fixed proposed amlodipine option and all pinned label passages**; one uses intended structured facts and one runs the production deterministic safety-fact extractor on free text with empty model hints. Neither path is a full LLM-backed `/analyze` call or a source-retrieval evaluation. Independent clinician review of expected labels is pending.
+
+| Measure | Structured facts | Deterministic text extraction |
+| --- | ---: | ---: |
+| Warning precision | 72/72 (1.000) | 68/68 (1.000) |
+| Warning recall | 72/72 (1.000) | 68/72 (0.944) |
+| Unexpected `supported` label-warning decisions | 0/168 | 0/168 |
+| Unknown/conflicting-allergy abstention | 24/24 | 20/24 |
+
+Four text-path unknown-allergy cases were missed because `No allergy history was recorded` was interpreted as an allergy mention. [The safety snapshot](../paper/MEDICATION_SAFETY_TEST_RESULTS.json) reports Wilson intervals, per-stratum counts, hashes, and failure IDs. Its 168 negative support opportunities represent case × two implemented label-warning types minus positive type decisions; within-case observations are correlated. These are provisional engineering results from source-derived cases, not patient safety estimates.
+
+The provenance test accepted **26/26** valid source controls and rejected **132/132** constructed invalid citation/source checks (26 each for five one-factor mutation types, plus two wrong snapshot hashes). Rejection is based on invalid-citation and trusted-passage checks, not on ordinary claims being `unverified`. [The tamper snapshot](../paper/PROVENANCE_TAMPER_RESULTS.json) gives mutation-level counts. This test establishes behavior for the tested identity corruptions, not semantic support for treatment claims.
+
+With the two local publisher snapshots available, rerun to **new** ignored output paths:
+
+```bash
+python -m evaluation.run_med_safety --output evaluation/runs/med-safety-new
+python -m evaluation.run_provenance --output evaluation/runs/provenance-new
+python -m evaluation.prepare_med_safety_review --output evaluation/runs/med-safety-review-new
+```
+
+Give qualified reviewers only the generated `review_packet.jsonl`, retaining `private_review_index.jsonl` separately; the [review rubric](SAFETY_LABEL_REVIEW.md) explains the required ratings. Do not label these results clinician-adjudicated until those ratings are completed and reconciled.
+
 ## Pinned-source retrieval metrics (13 October 2026)
 
 The MedQA answer key does **not** label relevant guideline or label passages, so Precision@k, Recall@k, Hit@k, MRR, nDCG, context relevance, and context recall cannot be inferred from that exam run. A separate [frozen 10-query known-passage probe set](retrieval_probes.v1.json) tests the production authoritative-source retriever against its entire **26-passage pinned corpus** (17 NICE NG136 sections, 9 DailyMed amlodipine label chunks). The developer wrote the queries and source-section judgments from that same corpus before running retrieval. Grades are 2 for a direct-answer passage, 1 for related but insufficient, and 0 for all unlisted passages. Required fact IDs link to grade-2 passages. These are engineering labels, **not** blinded or clinician-adjudicated relevance judgments. The test does not cover textbook-vector or graph retrieval.
