@@ -12,7 +12,7 @@ This protocol and `med_safety_cases.v1.json` are frozen before the first benchma
 
 ## Test B: provenance integrity
 
-- Use the actual pinned manifest and all 26 source passages (17 guideline and nine label passages). For each valid passage, test one valid cited control and five one-factor corruptions: invented citation ID, changed document version, modified passage, wrong source type, and forged retrieved-passage ID. A source is rejected when it is absent from `trusted_passages` and the citation is counted invalid. Separately, change the expected SHA-256 for each publisher snapshot and require `checked_bytes` to reject the file. No LLM or Qdrant is required.
+- Use the actual pinned manifest and all 26 source passages (17 guideline and nine label passages). For each valid passage, test one valid cited control and five one-factor corruptions: invented citation ID, changed document version, modified passage, wrong source type, and forged retrieved-passage ID. An invented **claim citation** must count invalid even if an unrelated valid retrieved passage remains trusted; a corrupted retrieved passage must be absent from `trusted_passages` and its citation must count invalid. Separately, change the expected SHA-256 for each publisher snapshot and require `checked_bytes` to reject the file. No LLM or Qdrant is required.
 - Valid controls must be trusted and counted valid. Ordinary proposed claims remain `unverified` by design; simply observing `unverified` is **not** a pass. Report accepted valid controls and rejected corruptions by mutation type. This measures source identity and fail-closed behavior, not whether a citation semantically supports a clinical claim.
 
 ## Human review gate and publication wording
