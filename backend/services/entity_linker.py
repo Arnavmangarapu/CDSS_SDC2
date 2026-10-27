@@ -12,6 +12,10 @@ class EntityLinker:
         """
         self.lookup_table = lookup_table
         self.vocab = list(self.lookup_table.keys())
+        self.by_source = {}
+        for name, candidates in lookup_table.items():
+            for candidate in candidates:
+                self.by_source.setdefault(candidate["source"], {}).setdefault(name, []).append(candidate)
 
     def _normalize_string(self, s: str) -> str:
         s = s.lower()
@@ -24,10 +28,12 @@ class EntityLinker:
         Links raw text to an ontology concept using exact match, then fuzzy match.
         """
         norm_text = self._normalize_string(raw_text)
+        source = {"symptom": "HPO", "condition": "MONDO", "medication": "DRUG", "allergy": "DRUG"}.get(entity_type)
+        lookup = self.by_source.get(source, {}) if source else self.lookup_table
         
         # 1. Exact Match
-        if norm_text in self.lookup_table:
-            candidates = self.lookup_table[norm_text]
+        if norm_text in lookup:
+            candidates = lookup[norm_text]
             best_candidate = candidates[0] # Pick the first match
             return LinkedEntity(
                 text=raw_text,
@@ -40,12 +46,12 @@ class EntityLinker:
             )
         
         # 2. Fuzzy Match
-        if not self.vocab:
+        if not lookup:
             return LinkedEntity(text=raw_text, entity_type=entity_type)
             
         results = process.extract(
             norm_text, 
-            self.vocab, 
+            list(lookup),
             scorer=fuzz.WRatio, 
             limit=5
         )
@@ -53,7 +59,7 @@ class EntityLinker:
         if results:
             best_match, score, _ = results[0]
             if score >= threshold:
-                candidates = self.lookup_table[best_match]
+                candidates = lookup[best_match]
                 best_candidate = candidates[0]
                 
                 return LinkedEntity(

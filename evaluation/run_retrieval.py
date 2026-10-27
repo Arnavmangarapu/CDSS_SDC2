@@ -16,6 +16,7 @@ from pathlib import Path
 from evaluation.metrics import percentile
 from evaluation.retrieval_metrics import aggregate, score_query
 from ingestion.authoritative_sources import COLLECTIONS, DEFAULT_MANIFEST, build_passages, load_manifest
+from backend.config import settings
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -128,7 +129,7 @@ def score_records(dataset: dict, probes: list[dict], selector_to_id: dict[str, s
                 "ndcg_at_k": "Mean DCG/ideal DCG using gains 2^grade-1 and log2(rank+1) discount",
                 "context_relevance": "Direct-answer passages / all passages in the complete retrieved context; equivalent to binary precision at context length",
                 "context_recall": "Developer-listed required facts with at least one linked passage retrieved / all listed required facts",
-                "rank_order": "The production retriever concatenates guideline top five, then drug-label top five; there is no cross-collection score merge",
+                "rank_order": "Five hits per source collection, globally reranked by the configured cross-encoder; dense score merge if no local reranker is available",
             }}
 
 
@@ -164,6 +165,8 @@ def main() -> None:
                 "source_manifest_sha256": sha256(DEFAULT_MANIFEST),
                 "corpus_counts": counts,
                 "embedder": "pritamdeka/S-PubMedBert-MS-MARCO",
+                "reranker": settings.VECTOR_RERANKER_MODEL,
+                "reranker_revision": settings.VECTOR_RERANKER_REVISION,
                 "collection_order": list(COLLECTIONS),
                 "top_k_per_collection": dataset["top_k_per_collection"],
                 "git_sha": git_sha, "git_worktree_dirty": dirty,

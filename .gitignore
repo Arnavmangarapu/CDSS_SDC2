@@ -31,3 +31,6 @@ eval_out.txt
 test_out.txt
 archive/reference/*.pdf
 archive/reference/*.zip
+
+# Local verified database backups; never commit database archives.
+local_backups/

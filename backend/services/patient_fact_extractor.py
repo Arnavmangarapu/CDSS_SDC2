@@ -13,6 +13,15 @@ from backend.schemas.patient import BloodPressureReading, MedicationStatement
 NO_ALLERGY = re.compile(r"\b(?:no known (?:drug |medication |medicine )?allergies|NKDA|NKA|denies (?:drug )?allergies)\b", re.I)
 ALLERGY = re.compile(r"\b(?:allergic to|allergy to|allergies to|allergies:)\s+([A-Za-z][A-Za-z0-9-]*)", re.I)
 ALLERGY_SUFFIX = re.compile(r"\b([A-Za-z][A-Za-z0-9-]*)\s+allergy\b", re.I)
+NON_ALLERGEN_WORDS = {"no", "unknown", "uncertain", "unconfirmed", "undocumented", "unavailable",
+                      "drug", "medication", "medicine", "an", "any", "the"}
+
+
+def _asserted_allergen(name: str, preceding: str) -> bool:
+    """An absent history or negated reaction is not an asserted substance allergy."""
+    clause = re.split(r"[.;\n]", preceding)[-1]
+    return name.casefold() not in NON_ALLERGEN_WORDS and not re.search(
+        r"\b(?:not|denies|no known|no history of|uncertain about|unsure about)\s+$", clause, re.I)
 NO_MEDICATION = re.compile(r"\b(?:no (?:current )?medications|takes? no medications|not taking any medications|medications?:\s*none)\b", re.I)
 CURRENT_MEDICATION = re.compile(r"\b(?:takes?|taking|currently on|current medications?\s*(?:include|are|:)|medications?:)\s+([^.;\n]+)", re.I)
 STOPPED_MEDICATION = re.compile(r"\b(?:stopped|discontinued|no longer taking|no longer takes?|not taking)\s+(?:taking\s+)?([^.;\n]+)", re.I)
@@ -53,7 +62,7 @@ def extract_safety_facts(raw_text: str, parsed: dict[str, Any]) -> dict[str, Any
     for pattern in (ALLERGY, ALLERGY_SUFFIX):
         for match in pattern.finditer(raw_text):
             preceding = raw_text[max(0, match.start() - 14):match.start()].casefold()
-            if preceding.endswith("not ") or "no known " in preceding or match.group(1).casefold() in {"drug", "medication", "medicine"}:
+            if not _asserted_allergen(match.group(1), preceding):
                 continue
             allergy_mentions.append((match.group(1), match.group(0)))
     for item in parsed.get("allergy_statements", []):
@@ -62,6 +71,7 @@ def extract_safety_facts(raw_text: str, parsed: dict[str, Any]) -> dict[str, Any
         name, quote = item.get("substance"), item.get("source_phrase")
         anchored = _anchored_quote(raw_text, quote) if isinstance(quote, str) else None
         if (isinstance(name, str) and anchored
+                and name.casefold() not in NON_ALLERGEN_WORDS
                 and re.search(rf"\b{re.escape(name)}\b", quote, re.I)
                 and not NO_ALLERGY.search(quote)
                 and (ALLERGY.search(quote) or ALLERGY_SUFFIX.search(quote))):

@@ -10,8 +10,9 @@ This repository intentionally contains **code, metadata, and synthetic fixtures 
 | `datasets/ontologies/mondo/mondo.obo` | `OntologyParser`, entity linking | [Mondo OBO download](https://mondo.monarchinitiative.org/pages/download/) |
 | `datasets/drugcentral/structures.smiles.tsv` | Drug-name lookup in `OntologyParser` | [DrugCentral downloads](https://www.drugcentral.org/download) |
 | `datasets/drugcentral/drug.target.interaction.tsv.gz` | `DrugCentralService` | [DrugCentral downloads](https://www.drugcentral.org/download); keep the compressed TSV name expected by the code |
-| `datasets/kg.csv` | `ingestion/populate_neo4j.py` | [PrimeKG project and data instructions](https://github.com/mims-harvard/PrimeKG); use a CSV with the expected `relation`, `x_id`, `x_type`, `x_name`, `y_id`, `y_type`, and `y_name` columns |
+| `datasets/kg.csv` | `ingestion/populate_neo4j.py` | [PrimeKG project and data instructions](https://github.com/mims-harvard/PrimeKG); requires `relation` and both endpoints' `index`, `id`, `type`, `name`, and `source` columns. Global indexes identify nodes; raw vocabulary IDs are not globally unique. |
 | `datasets/literature/MedQA/MedQA-USMLE/textbooks/en/First_Aid_Step1.txt` | `ingestion/populate_qdrant.py` | [MedQA project](https://github.com/jind11/MedQA); textbook availability and reuse terms must be checked separately |
+| `datasets/literature/MedQA/MedQA-USMLE/textbooks/en/Pathoma_Husain.txt` | `ingestion/populate_qdrant.py` | Second complete textbook in the default selected corpus |
 | `datasets/authoritative/hypertension/` | Pinned source parser and verifier | Exact snapshots fetched from official URLs in [the source manifest](../sources/hypertension/manifest.json) |
 
 The local evaluator also requires populated Neo4j and Qdrant stores. Extra MedQA question files, MedMCQA, PubMedQA, MedBullets, and the full DrugCentral SQL dump are **not loaded by the current `/analyze` route**. Keeping them outside a fresh checkout avoids implying they are needed for this prototype.
@@ -23,14 +24,29 @@ After placing the files above and installing `requirements.txt`:
 ```bash
 ./run_qdrant.sh
 ./run_neo4j.sh
-python ingestion/populate_neo4j.py --limit 50000
-python ingestion/populate_qdrant.py
+python -m ingestion.populate_neo4j --manifest evaluation/runs/graph-build/manifest.json
+python -m ingestion.prepare_models
+python -m ingestion.populate_qdrant --manifest evaluation/runs/textbook-build/manifest.json
 python -m ingestion.authoritative_sources fetch
 python -m ingestion.authoritative_sources verify
 python -m ingestion.authoritative_sources ingest
 ```
 
-The two Docker scripts create development containers with local ports and a fixed Neo4j password. If those containers already exist, start the existing containers rather than running the creation scripts again. `populate_neo4j.py` defaults to the first 50,000 graph rows; `--limit 0` requests the complete CSV and may require substantial storage and time. `populate_qdrant.py` currently indexes only the first 150,000 characters of one textbook, not the entire MedQA corpus. Both indexes must be rebuilt when their underlying data or embedding method changes.
+The Docker scripts create development containers. If containers already exist, start
+the existing containers instead of recreating them. Back up existing stores before
+building new data; [the checkpoint guide](../DATABASE_CHECKPOINT.md) documents the
+verified local backup. Graph ingestion reads the entire CSV in bounded chunks but
+imports only the clinical relation types used by this prototype. Textbook ingestion
+reads both default files completely, without a character cap, into a new collection.
+It never deletes the previous collection. Use `--files` to select other files within
+the textbook directory or `--all-textbooks` for all available textbooks. There is no
+claim that the two-file default covers all medical specialties.
+
+The pre-existing `medical_literature` collection is excluded: its vectors have a
+different dimensionality (384 rather than 768) and inspected payloads include exam
+questions and answer explanations. It is unsuitable as an unreviewed replacement
+corpus for the frozen exam evaluations. Local model downloads are under ignored
+`datasets/models/`; document and model revisions are recorded for reproduction.
 
 ## Pinned authoritative sources
 

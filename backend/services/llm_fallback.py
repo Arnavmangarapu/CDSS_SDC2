@@ -1,11 +1,14 @@
 """Shared JSON generation with provider and model fallbacks."""
 
 import json
+from contextvars import ContextVar
 from typing import Callable, Dict, Optional
 
 import requests
 
 from backend.config import settings
+
+_response_schema = ContextVar("response_schema", default=None)
 
 
 class LLMFallback:
@@ -29,6 +32,19 @@ class LLMFallback:
         )
 
     def generate_json(
+        self,
+        prompt: str,
+        system_instruction: str,
+        validate: Optional[Callable[[Dict], None]] = None,
+        response_schema: dict | None = None,
+    ) -> Optional[Dict]:
+        token = _response_schema.set(response_schema)
+        try:
+            return self._generate_json(prompt, system_instruction, validate)
+        finally:
+            _response_schema.reset(token)
+
+    def _generate_json(
         self,
         prompt: str,
         system_instruction: str,
@@ -82,10 +98,13 @@ class LLMFallback:
             {
                 "systemInstruction": {"parts": [{"text": system}]},
                 "contents": [{"parts": [{"text": prompt}]}],
-                "generationConfig": {"temperature": 0, "responseMimeType": "application/json"},
+                "generationConfig": {"temperature": 0, "responseMimeType": "application/json",
+                                     **({"responseJsonSchema": _response_schema.get()}
+                                        if _response_schema.get() is not None else {})},
             },
         )
-        return "".join(part.get("text", "") for part in data["candidates"][0]["content"]["parts"])
+        return "".join(part.get("text", "") for part in data["candidates"][0]["content"]["parts"]
+                       if not part.get("thought", False))
 
     def _gemini_lite(self, key: str, prompt: str, system: str) -> str:
         return self._gemini("gemini-3.5-flash-lite", key, prompt, system)

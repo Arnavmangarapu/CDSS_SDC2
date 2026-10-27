@@ -33,6 +33,12 @@ The verifier accepts only passages that match the pinned source manifest and loc
 
 ## Local setup
 
+The 27 October improvement pass uses a `ClinicalEntity` graph schema with PrimeKG
+global node-index identifiers, complete selected textbooks in `medical_textbooks_v2`,
+and a revision-pinned local cross-encoder. See [the database checkpoint and rollback guide](DATABASE_CHECKPOINT.md)
+before rebuilding any existing stores. Historical evaluation results below describe
+their dated implementation; new measurements are saved separately.
+
 The repository contains code, a versioned source manifest, synthetic test cases, and the MedQA selection protocol. It **does not include** the large biomedical datasets, MedQA exam questions, Qdrant or Neo4j contents, or the raw NICE/DailyMed snapshots. You need the local inputs described in [datasets/DATASET_GUIDE.md](datasets/DATASET_GUIDE.md) to reproduce the full pipeline. Respect each source's reuse terms before obtaining or redistributing it.
 
 1. Clone and install dependencies (the current local evaluation used Python 3.14):
@@ -53,11 +59,20 @@ The repository contains code, a versioned source manifest, synthetic test cases,
    ```bash
    ./run_qdrant.sh
    ./run_neo4j.sh
-   python ingestion/populate_neo4j.py --limit 50000
-   python ingestion/populate_qdrant.py
+   python -m ingestion.populate_neo4j --manifest evaluation/runs/graph-build/manifest.json
+   python -m ingestion.prepare_models
+   python -m ingestion.populate_qdrant --manifest evaluation/runs/textbook-build/manifest.json
    ```
 
-   These scripts are for local development. They use a fixed local Neo4j password; change the credentials and deployment settings before using a shared environment. The Neo4j script imports 50,000 rows by default; the textbook script indexes only the first 150,000 characters of one MedQA textbook.
+   The graph importer streams all rows and selects positive/negative phenotype–disease,
+   drug contraindication and indication relations, deduplicating reverse edges. It uses
+   the configured Neo4j connection and adds a separate schema without deleting legacy
+   nodes. The textbook importer admits complete First Aid and Pathoma files by default,
+   refuses to overwrite an existing collection, and records input hashes. Use a new
+   collection name for another build. `--all-textbooks` explicitly selects the other
+   available textbook files and requires more embedding time. Exam questions and keys
+   are outside the permitted ingestion directory. `prepare_models` downloads the pinned
+   cross-encoder once; runtime loading is local-only.
 
 3. Fetch and index the pinned authoritative sources:
 

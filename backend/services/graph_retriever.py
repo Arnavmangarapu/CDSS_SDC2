@@ -1,78 +1,57 @@
+"""Bounded phenotype/disease retrieval with separate negative associations."""
 from neo4j import GraphDatabase
-from typing import List, Dict, Any
-from backend.schemas.retrieval import GraphRetrievalResult, GraphPath
+
+from backend.config import settings
 from backend.schemas.patient import PatientContext
+from backend.schemas.retrieval import GraphPath, GraphRetrievalResult
+
 
 class GraphRetriever:
     def __init__(self, kg_path: str):
-        # kg_path is ignored now as we connect to Neo4j directly
-        self.uri = "bolt://localhost:7687"
-        self.auth = ("neo4j", "password")
-        try:
-            self.driver = GraphDatabase.driver(self.uri, auth=self.auth)
-            self.is_ready = True
-        except Exception as e:
-            print(f"Failed to connect to Neo4j: {e}")
-            self.is_ready = False
+        self.driver = GraphDatabase.driver(settings.NEO4J_URI,
+                                          auth=(settings.NEO4J_USER, settings.NEO4J_PASSWORD))
+        self.is_ready = True
 
     def retrieve(self, context: PatientContext) -> GraphRetrievalResult:
         if not self.is_ready:
-            return GraphRetrievalResult(candidate_diseases=[], paths=[])
-
-        symptom_names = [s.normalized_name.lower() for s in context.symptoms if s.normalized_name]
-        drug_names = [d.normalized_name.lower() for d in context.medications if d.normalized_name]
-
-        candidate_diseases: Dict[str, Dict[str, Any]] = {}
-        paths: List[GraphPath] = []
-        contraindications: List[Dict[str, Any]] = []
-
+            return GraphRetrievalResult(candidate_diseases=[], paths=[], limitations=['Graph unavailable'])
+        names = sorted({name.strip().lower() for s in context.symptoms
+                        for name in (s.normalized_name, s.text) if name})
+        ids = sorted({s.ontology_id for s in context.symptoms
+                      if s.ontology_source == 'HPO' and s.ontology_id})
+        drugs = sorted({(d.normalized_name or d.text).strip().lower() for d in context.medications})
+        candidates, paths, contraindications = [], [], []
         with self.driver.session() as session:
-            # 1. Phenotype to Disease
-            if symptom_names:
-                query = """
-                MATCH (s:Node)-[r]->(d:Node {type: 'disease'})
-                WHERE s.name IN $symptoms AND toLower(type(r)) CONTAINS 'phenotype'
-                RETURN s.name AS x_name, s.type AS x_type, d.name AS y_name, d.type AS y_type, type(r) AS relation, d.id AS y_id
-                """
-                result = session.run(query, symptoms=symptom_names)
-                for record in result:
-                    disease_name = record['y_name']
-                    if disease_name not in candidate_diseases:
-                        candidate_diseases[disease_name] = {
-                            "name": disease_name,
-                            "id": record['y_id'],
-                            "score": 0.0,
-                            "evidence_count": 0
-                        }
-                    candidate_diseases[disease_name]["evidence_count"] += 1
-                    candidate_diseases[disease_name]["score"] += 1.0
-
-                    paths.append(GraphPath(
-                        nodes=[{"name": record['x_name'], "type": record['x_type']}, {"name": record['y_name'], "type": record['y_type']}],
-                        relationships=[record['relation']],
-                        score=1.0
-                    ))
-
-            # 2. Contraindications for current drugs
-            if drug_names:
-                query = """
-                MATCH (drug:Node)-[r]->(disease:Node)
-                WHERE drug.name IN $drugs AND toLower(type(r)) CONTAINS 'contraindication'
-                RETURN drug.name AS x_name, disease.name AS y_name
-                """
-                result = session.run(query, drugs=drug_names)
-                for record in result:
-                    contraindications.append({
-                        "drug": record['x_name'],
-                        "disease": record['y_name']
-                    })
-
-        sorted_candidates = sorted(list(candidate_diseases.values()), key=lambda x: x["score"], reverse=True)
-
-        return GraphRetrievalResult(
-            candidate_diseases=sorted_candidates[:10],
-            paths=paths,
-            contraindications=contraindications,
-            drug_interactions=[],
-            limitations=["Using Live Neo4j Graph Database for retrieval."]
-        )
+            if names or ids:
+                records = session.run('''
+                    MATCH (s:ClinicalEntity {type:'effect/phenotype'})-[r]->(d:ClinicalEntity {type:'disease'})
+                    WHERE (s.ontology_id IN $ids OR s.name IN $names)
+                      AND type(r) IN ['PHENOTYPE_SUPPORTS_DISEASE','PHENOTYPE_ABSENT_IN_DISEASE']
+                    WITH d, collect(DISTINCT {phenotype:s.name, phenotype_id:s.ontology_id,
+                                             relation:type(r)}) AS evidence
+                    WITH d, evidence,
+                         size([e IN evidence WHERE e.relation='PHENOTYPE_SUPPORTS_DISEASE']) AS positive,
+                         size([e IN evidence WHERE e.relation='PHENOTYPE_ABSENT_IN_DISEASE']) AS negative
+                    WHERE positive > 0
+                    RETURN d.name AS name,d.uid AS id,positive,negative,evidence
+                    ORDER BY positive-negative DESC,positive DESC,name LIMIT 10
+                ''', names=names, ids=ids)
+                for record in records:
+                    candidates.append({'name': record['name'], 'id': record['id'],
+                        'score': float(record['positive'] - record['negative']),
+                        'evidence_count': record['positive'], 'contradiction_count': record['negative']})
+                    for edge in record['evidence']:
+                        paths.append(GraphPath(nodes=[{'name': edge['phenotype'], 'id': edge['phenotype_id'],
+                                                        'type': 'effect/phenotype'},
+                                                       {'name': record['name'], 'id': record['id'], 'type': 'disease'}],
+                                               relationships=[edge['relation']],
+                                               score=1.0 if edge['relation'] == 'PHENOTYPE_SUPPORTS_DISEASE' else -1.0))
+            if drugs:
+                contraindications = session.run('''
+                    MATCH (drug:ClinicalEntity {type:'drug'})-[:DRUG_CONTRAINDICATED_FOR]->(d:ClinicalEntity {type:'disease'})
+                    WHERE drug.name IN $drugs
+                    RETURN drug.name AS drug,d.name AS disease ORDER BY drug,disease LIMIT 100
+                ''', drugs=drugs).data()
+        return GraphRetrievalResult(candidate_diseases=candidates, paths=paths,
+            contraindications=contraindications, drug_interactions=[],
+            limitations=['Graph associations are candidate signals, not diagnostic probabilities or verified claims.'])

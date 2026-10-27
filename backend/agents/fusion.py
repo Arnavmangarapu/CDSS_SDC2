@@ -1,6 +1,7 @@
 """Generate candidate clinical claims from retrieved evidence and patient context."""
 
 from dataclasses import dataclass
+from copy import deepcopy
 from typing import Any
 
 from backend.schemas.evidence import EvidenceItem
@@ -22,6 +23,29 @@ class FusionResult:
 class ClinicalFusion:
     def __init__(self):
         self.llm = LLMFallback()
+
+    @staticmethod
+    def response_schema():
+        strings = {"type": "array", "items": {"type": "string"}}
+        claim = {"type": "object", "properties": {
+            "text": {"type": "string", "minLength": 1},
+            "applies_to": {"type": "string", "minLength": 1},
+            **{key: strings for key in ("conditions", "missing_checks", "supporting_evidence_ids",
+                                       "conflicting_evidence_ids", "unverified_evidence_ids")}},
+            "required": ["text", "applies_to", "conditions", "missing_checks", "supporting_evidence_ids",
+                         "conflicting_evidence_ids", "unverified_evidence_ids"], "additionalProperties": False}
+        properties = {"diagnoses": {"type": "array", "items": {"type": "object", "properties": {
+            "diagnosis": {"type": "string", "minLength": 1},
+            "confidence": {"type": "number", "minimum": 0, "maximum": 1}},
+            "required": ["diagnosis", "confidence"], "additionalProperties": False}},
+            **{key: {"type": "array", "items": claim} for key in
+               ("diagnostic_claims", "investigations_to_consider", "treatment_options_if_confirmed")},
+            "missing_information": strings}
+        treatment = deepcopy(claim)
+        treatment["properties"]["conditions"] = {**strings, "minItems": 1}
+        properties["treatment_options_if_confirmed"] = {"type": "array", "items": treatment}
+        return {"type": "object", "properties": properties, "required": list(properties),
+                "additionalProperties": False}
 
     @staticmethod
     def _proposals(data: dict[str, Any]) -> list[ClaimProposal]:
@@ -67,6 +91,7 @@ class ClinicalFusion:
             prompt,
             "You are a clinical evidence extraction assistant. Return only valid JSON; never declare a claim verified.",
             validate=self._validate_response,
+            response_schema=self.response_schema(),
         )
         if parsed is None:
             graph_names = [item.get("name") for item in retrieval_result.graph_results.candidate_diseases]
@@ -106,7 +131,18 @@ class ClinicalFusion:
                 f"version {source.document_version}; {source.section}; {source.url}\n"
                 f"PASSAGE: {source.passage}"
             )
-        candidate_lines = [f"- {item.title}: {item.text[:250]}" for item in ranked_evidence[:8]]
+        # Preserve complete sentence/word boundaries under a shared context budget.
+        candidate_lines = []
+        remaining = 1600
+        candidate_items = ([item for item in ranked_evidence if item.source_type == "graph"][:3]
+                           + [item for item in ranked_evidence if item.source_type != "graph"][:5])
+        for item in candidate_items:
+            words = item.text.split()
+            selected = words[:min(350, remaining)]
+            if not selected:
+                break
+            candidate_lines.append(f"- {item.title}: {' '.join(selected)}")
+            remaining -= len(selected)
         if not source_lines:
             source_lines = ["No authoritative source passage was retrieved; leave source ID lists empty."]
         return (
@@ -114,6 +150,9 @@ class ClinicalFusion:
             "Use graph, textbook, DrugCentral, and web results only to suggest candidates; "
             "only the authoritative source IDs listed below may be cited. "
             "Do not infer a diagnosis or medication safety from a guideline or drug label alone. "
+            "Use the patient's findings to form differential candidates; a missing authoritative citation "
+            "does not prohibit an explicitly unverified differential. Retrieved candidate signals may be "
+            "irrelevant or contradictory: disregard them when they do not fit the case. "
             "Keep evidence for and against a claim in separate lists. "
             "Do not output medicines_to_use, prescriptions, or imperative treatment directions.\n\n"
             f"Patient statement: {context.raw_input}\n"

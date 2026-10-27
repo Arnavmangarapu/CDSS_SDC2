@@ -1,4 +1,7 @@
 from typing import List, Dict, Any
+import math
+import re
+from pathlib import Path
 from backend.schemas.patient import PatientContext
 from backend.config import settings
 from backend.schemas.evidence import SourcePassage
@@ -12,6 +15,16 @@ class VectorRetriever:
             self.model = SentenceTransformer('pritamdeka/S-PubMedBert-MS-MARCO')
             self.collection_name = settings.VECTOR_COLLECTION_TEXTBOOKS
             self.is_ready = True
+            self.reranker = None
+            if settings.VECTOR_RERANKER_MODEL:
+                from sentence_transformers import CrossEncoder
+                try:
+                    self.reranker = CrossEncoder(settings.VECTOR_RERANKER_MODEL, device="cpu",
+                        revision=settings.VECTOR_RERANKER_REVISION,
+                        cache_folder=str(Path(__file__).resolve().parents[2] / "datasets/models"),
+                        local_files_only=True, max_length=512)
+                except (OSError, ValueError):
+                    print("Cross-encoder unavailable locally; using dense ranking. Run ingestion.prepare_models.")
         except Exception as e:
             print(f"Failed to initialize VectorRetriever: {e}")
             self.is_ready = False
@@ -32,23 +45,37 @@ class VectorRetriever:
         try:
             query_vec = self.model.encode(query).tolist()
             search_result = self.client.query_points(
-                collection_name=self.collection_name, query=query_vec, limit=top_k
+                collection_name=self.collection_name, query=query_vec, limit=max(20, top_k)
             )
             results = []
             for hit in search_result.points:
-                if hit.score > 0.4:
-                    results.append({
+                results.append({
                         "text": hit.payload.get("text", ""),
-                        "metadata": {"source": hit.payload.get("source", "")},
+                        "metadata": {"source": hit.payload.get("source", ""),
+                                     "dense_score": hit.score, "chunk_id": str(hit.id)},
                         "score": hit.score,
                     })
-            return results
+            reranker = getattr(self, "reranker", None)
+            if reranker is not None and results:
+                scores = reranker.predict([(query, item["text"]) for item in results], show_progress_bar=False)
+                for item, score in zip(results, scores):
+                    item["metadata"]["reranker_score"] = float(score)
+                    item["score"] = 1 / (1 + math.exp(-max(-50, min(50, float(score)))))
+                results.sort(key=lambda item: item["score"], reverse=True)
+            return results[:top_k]
         except Exception as e:
             print(f"Vector search failed: {e}")
             return []
 
     def retrieve_authoritative(self, context: PatientContext, top_k: int = 5) -> tuple[list[SourcePassage], list[str]]:
         query = context.expanded_query or context.raw_input
+        # A normal BP reading in an unrelated case is not a hypertension query.
+        scoped = bool(re.search(r"\b(?:hypertension|hypertensive|high blood pressure|amlodipine|simvastatin)\b",
+                                context.raw_input, re.I))
+        scoped = scoped or any(r.systolic_mm_hg >= 140 or r.diastolic_mm_hg >= 90
+                               for r in context.blood_pressure_readings)
+        if not scoped:
+            return [], []
         return self.retrieve_authoritative_query(query, top_k)
 
     def retrieve_authoritative_query(self, query: str, top_k: int = 5) -> tuple[list[SourcePassage], list[str]]:
@@ -65,6 +92,7 @@ class VectorRetriever:
             return [], [f"Authoritative source manifest or snapshot unavailable: {exc}"]
 
         passages: list[SourcePassage] = []
+        dense_scores = {}
         limitations: list[str] = []
         try:
             vector = self.model.encode(query)
@@ -92,6 +120,15 @@ class VectorRetriever:
                             or passage.id not in verified_ids):
                         raise ValueError("source version or checksum does not match manifest")
                     passages.append(passage)
+                    dense_scores[passage.id] = float(hit.score)
                 except (KeyError, ValueError, TypeError) as exc:
                     limitations.append(f"Rejected invalid {kind} citation payload: {exc}")
+        # Both collections use the same encoder. Never impose a source-type rank.
+        reranker = getattr(self, "reranker", None)
+        if reranker is not None and passages:
+            scores = reranker.predict([(query, passage.passage) for passage in passages], show_progress_bar=False)
+            ordered = sorted(zip(scores, passages), key=lambda pair: (-float(pair[0]), pair[1].id))
+            passages = [passage for _, passage in ordered]
+        else:
+            passages.sort(key=lambda passage: (-dense_scores[passage.id], passage.id))
         return passages, limitations

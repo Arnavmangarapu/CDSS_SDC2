@@ -17,7 +17,9 @@ class Settings(BaseSettings):
     NEO4J_PASSWORD: str = "password"
 
     QDRANT_URL: str = "http://localhost:6333"
-    VECTOR_COLLECTION_TEXTBOOKS: str = "medical_textbooks"
+    VECTOR_COLLECTION_TEXTBOOKS: str = "medical_textbooks_v2"
+    VECTOR_RERANKER_MODEL: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    VECTOR_RERANKER_REVISION: str = "233902d25c440f23af6f7d6e94d2946bac0bee0a"
     VECTOR_COLLECTION_PUBMEDQA: str = "pubmedqa_contexts"
     VECTOR_COLLECTION_MEDQA: str = "medqa_train"
     VECTOR_COLLECTION_GUIDELINES: str = "clinical_guidelines"

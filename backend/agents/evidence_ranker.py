@@ -18,15 +18,17 @@ class EvidenceRanker:
             disease_name = g_candidate.get("name", "Unknown")
             raw_score = g_candidate.get("score", 0.0)
             
-            # Simple heuristic: heavily weight graph exact matches
-            final_score = raw_score * 1.5
+            # Bound association coverage; it is not a diagnostic probability.
+            final_score = max(0.0, min(1.0, raw_score / max(1, len(context.symptoms))))
             
             ev = EvidenceItem(
                 id=str(uuid.uuid4()),
                 source_type="graph",
                 source_name="Local KG",
                 title=f"Graph Path to {disease_name}",
-                text=f"The patient's symptoms strongly link to {disease_name} in the Knowledge Graph.",
+                text=(f"Graph candidate {disease_name}: {g_candidate.get('evidence_count', 0)} matched "
+                      f"phenotype associations and {g_candidate.get('contradiction_count', 0)} contradictory "
+                      "associations. This is an unverified association, not a diagnostic probability."),
                 score=final_score,
                 supports=[disease_name]
             )
