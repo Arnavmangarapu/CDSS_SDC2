@@ -1,5 +1,17 @@
 # Step 8 evaluation
 
+## Frozen three-dataset exam-QA benchmark (incomplete)
+
+The [QA protocol](QA_BENCHMARK_PROTOCOL.md) freezes 50 questions each from MedQA,
+PubMedQA and MedBullets and compares a direct LLM baseline with the production
+CDSS report plus an added answer-selection adapter. The [partial results](../paper/QA_BENCHMARK_PARTIAL_RESULTS.md)
+contain 255/300 planned arm attempts; the provider's confirmed 500-requests-per-day
+quota blocked completion. Forty-five attempts remain. The protocol gives the
+resume command; earlier failures stay in the denominator. These are adapted QA
+results, not a reproduction of either reference paper or clinical validation.
+The partial scores do not support an improvement claim. Raw questions, keys and
+reports remain in ignored run directories. Replayed metrics matched byte for byte.
+
 For the proposed full multi-condition benchmark, staged implementation, metric definitions, and paper reporting, see [MULTI_DISEASE_EVALUATION_PLAN.md](MULTI_DISEASE_EVALUATION_PLAN.md). The synthetic pilot and the separate MedQA exam-vignette pilot are exploratory subsets of that broader plan.
 
 ## Frozen medication-safety and provenance challenges (13 October 2026)
