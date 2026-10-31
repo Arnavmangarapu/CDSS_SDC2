@@ -65,3 +65,24 @@ def test_all_planned_failures_count_and_empty_support_is_not_success():
     assert r['modes']['llm_only']['useful_supported_warning_recall']['value'] == 0
     assert r['extraction']['merged_allergy_status_match']['planned'] == 1
     assert r['extraction']['merged_allergy_status_match']['correct'] == 0
+
+
+def test_continuation_retains_errors_and_marks_next_possible_inflight(tmp_path):
+    import hashlib,json
+    from pathlib import Path
+    import evaluation.safety_live_pilot as runner
+    source=Path(runner.__file__).read_text()
+    old={'cases_sha256':'cases','source_manifest_sha256':'sources','model':'model','ontology_sha256':{},
+         'runtime_configuration':{},'code_sha256':{'evaluation/safety_live_pilot.py':hashlib.sha256(source.encode()).hexdigest()}}
+    prior=tmp_path/'prior.json';prior.write_text(json.dumps(old))
+    protocol={**old,'previous_protocol_sha256':hashlib.sha256(prior.read_bytes()).hexdigest(),
+              'code_sha256':{'evaluation/safety_live_pilot.py':'new administrative version'}}
+    rows=[{'case_id':'first','mode':m,'status':'error','error_type':'ExistingFailure'} for m in runner.MODES]
+    (tmp_path/'records.jsonl').write_text(''.join(json.dumps(x)+'\n' for x in rows))
+    (tmp_path/'extraction.private.jsonl').write_text(json.dumps({'case_id':'first','status':'error'})+'\n')
+    records,extraction,complete,uncertain=runner.continuation_inputs(tmp_path,prior,protocol,[{'case_id':'first'},{'case_id':'second'}],source)
+    assert records==rows and complete=={'first'}
+    assert uncertain==('second','hybrid_fixed_proposal')
+    protocol['model']='different'
+    with pytest.raises(ValueError,match='configuration changed'):
+        runner.continuation_inputs(tmp_path,prior,protocol,[{'case_id':'first'}],source)

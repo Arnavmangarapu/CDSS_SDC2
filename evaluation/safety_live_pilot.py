@@ -4,6 +4,7 @@ Private JSONL retains raw LLM JSON and merged context. Public summary contains
 counts/IDs only. No source/model changes or new independent labels are made.
 """
 import argparse
+import ast
 from copy import deepcopy
 from datetime import datetime, timezone
 import hashlib
@@ -133,10 +134,53 @@ def summarize(cases, records, extraction):
     return result
 
 
+def continuation_inputs(directory, previous_protocol, protocol, cases, prior_source):
+    """Validate administrative continuation without replacing clinical outcomes."""
+    prior = json.loads(previous_protocol.read_text())
+    if protocol.get('previous_protocol_sha256') != sha256(previous_protocol):
+        raise ValueError('Continuation lineage differs from frozen protocol')
+    for key in ('cases_sha256', 'source_manifest_sha256', 'model', 'ontology_sha256', 'runtime_configuration'):
+        if prior.get(key) != protocol.get(key): raise ValueError('Clinical input/configuration changed: '+key)
+    old_hashes, new_hashes = prior['code_sha256'], protocol['code_sha256']
+    changed = {k for k in set(old_hashes) | set(new_hashes) if old_hashes.get(k) != new_hashes.get(k)}
+    if changed != {'evaluation/safety_live_pilot.py'}:
+        raise ValueError('Continuation permits only the audited runner change')
+    if hashlib.sha256(prior_source.encode()).hexdigest() != old_hashes['evaluation/safety_live_pilot.py']:
+        raise ValueError('Historical runner source mismatch')
+    def clinical_ast(source):
+        tree = ast.parse(source)
+        return [ast.dump(n, include_attributes=False) for n in tree.body
+                if isinstance(n, (ast.FunctionDef, ast.ClassDef)) and n.name not in ('main', 'continuation_inputs')]
+    if clinical_ast(prior_source) != clinical_ast(Path(__file__).read_text()):
+        raise ValueError('Clinical functions changed; do not pool versions')
+    def read(name):
+        path = directory/name
+        return [json.loads(line) for line in path.read_text().splitlines() if line.strip()] if path.exists() else []
+    records, extraction = read('records.jsonl'), read('extraction.private.jsonl')
+    by_key = {(x['case_id'], x['mode']): x for x in records}
+    if len(by_key) != len(records): raise ValueError('Duplicate prior outcomes')
+    ids = {c['case_id'] for c in cases}
+    if any(cid not in ids or mode not in MODES for cid,mode in by_key): raise ValueError('Unknown prior outcome')
+    complete = {cid for cid in ids if all((cid,m) in by_key for m in MODES)}
+    if len(records) != len(complete)*len(MODES):
+        raise ValueError('Prior partial-case matrix requires explicit attempt adjudication')
+    if {x['case_id'] for x in extraction} != complete or len(extraction) != len(complete):
+        raise ValueError('Prior extraction records inconsistent')
+    # The first segment lacked a before-request journal. Conservatively count
+    # its next scheduled call as failed, even if it never reached the provider.
+    next_case = next(((i,c) for i,c in enumerate(cases) if c['case_id'] not in complete), None)
+    skipped = None
+    if next_case:
+        i,c = next_case
+        skipped = (c['case_id'], 'llm_only' if i%2 == 0 else 'hybrid_fixed_proposal')
+    return records, extraction, complete, skipped
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--cases', type=Path, required=True); p.add_argument('--protocol', type=Path, required=True)
     p.add_argument('--output', type=Path, required=True)
+    p.add_argument('--resume-from', type=Path); p.add_argument('--previous-protocol', type=Path)
     args = p.parse_args()
     if args.output.exists(): p.error('Preserve earlier attempts; output exists')
     protocol = validate_protocol(args.protocol, args.cases)
@@ -159,17 +203,33 @@ def main():
                 'protocol': protocol, 'planned_cases': len(cases), 'modes': MODES,
                 'inference_budget': 'One warning call and one unchanged production extraction call per case; no regeneration'}
     records, extraction = [], []
+    completed, uncertain = set(), None
+    if args.resume_from:
+        if not args.previous_protocol: p.error('Continuation requires prior frozen protocol')
+        import subprocess
+        prior = json.loads(args.previous_protocol.read_text())
+        prior_source = subprocess.check_output(['git','show',prior['git_commit']+':evaluation/safety_live_pilot.py'],cwd=ROOT,text=True)
+        records, extraction, completed, uncertain = continuation_inputs(args.resume_from, args.previous_protocol, protocol, cases, prior_source)
+        manifest.update(previous_segment=str(args.resume_from), previous_protocol_sha256=sha256(args.previous_protocol),
+                        uncertain_inflight_counted_failed=uncertain, continuation_policy='Clinical functions AST-identical; prior outputs/errors retained; no generated answer repeated')
     def save(name, row):
         with (args.output/name).open('a', encoding='utf-8') as stream: stream.write(json.dumps(row, default=str)+'\n')
+    if args.resume_from:
+        for row in records: save('records.jsonl', row)
+        for row in extraction: save('extraction.private.jsonl', row)
     try:
         with controlled_transport(protocol['model'], interval=4.2, retries=3,
                                   event_sink=lambda e: save('transport.jsonl', e)):
             configure_llm(clarifier.llm); configure_llm(llm)
             for i, case in enumerate(cases):
+                if case['case_id'] in completed: continue
                 rows = {'deterministic': run_case(case, 'deterministic', pinned, labels)}
                 order = ('llm_only', 'hybrid_fixed_proposal') if i % 2 == 0 else ('hybrid_fixed_proposal', 'llm_only')
                 for mode in order:
                     try:
+                        if uncertain == (case['case_id'], mode):
+                            raise RuntimeError('UncertainInFlightAtInfrastructureStop')
+                        save('attempts.jsonl', {'case_id':case['case_id'], 'mode':mode, 'event':'before_request', 'utc':datetime.now(timezone.utc).isoformat()})
                         with capture_timings() as events:
                             if mode == 'llm_only': row = run_case(case, mode, pinned, labels, llm=llm)
                             else:
