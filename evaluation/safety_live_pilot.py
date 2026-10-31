@@ -143,7 +143,7 @@ def continuation_inputs(directory, previous_protocol, protocol, cases, prior_sou
         if prior.get(key) != protocol.get(key): raise ValueError('Clinical input/configuration changed: '+key)
     old_hashes, new_hashes = prior['code_sha256'], protocol['code_sha256']
     changed = {k for k in set(old_hashes) | set(new_hashes) if old_hashes.get(k) != new_hashes.get(k)}
-    if changed != {'evaluation/safety_live_pilot.py'}:
+    if not changed <= {'evaluation/safety_live_pilot.py'}:
         raise ValueError('Continuation permits only the audited runner change')
     if hashlib.sha256(prior_source.encode()).hexdigest() != old_hashes['evaluation/safety_live_pilot.py']:
         raise ValueError('Historical runner source mismatch')
@@ -170,7 +170,8 @@ def continuation_inputs(directory, previous_protocol, protocol, cases, prior_sou
     # its next scheduled call as failed, even if it never reached the provider.
     next_case = next(((i,c) for i,c in enumerate(cases) if c['case_id'] not in complete), None)
     skipped = None
-    if next_case:
+    prior_manifest = json.loads((directory/'manifest.json').read_text()) if (directory/'manifest.json').exists() else {}
+    if next_case and prior_manifest.get('status') != 'segment_complete':
         i,c = next_case
         skipped = (c['case_id'], 'llm_only' if i%2 == 0 else 'hybrid_fixed_proposal')
     return records, extraction, complete, skipped
@@ -221,8 +222,10 @@ def main():
         with controlled_transport(protocol['model'], interval=4.2, retries=3,
                                   event_sink=lambda e: save('transport.jsonl', e)):
             configure_llm(clarifier.llm); configure_llm(llm)
+            segment_cases = 0
             for i, case in enumerate(cases):
                 if case['case_id'] in completed: continue
+                if segment_cases >= protocol.get('segment_case_limit',20): break
                 rows = {'deterministic': run_case(case, 'deterministic', pinned, labels)}
                 order = ('llm_only', 'hybrid_fixed_proposal') if i % 2 == 0 else ('hybrid_fixed_proposal', 'llm_only')
                 for mode in order:
@@ -252,9 +255,13 @@ def main():
                 rows['llm_rule_filtered'] = rule_filter(rows['llm_only'], rows['hybrid_fixed_proposal'])
                 for mode in ('deterministic', 'llm_rule_filtered'):
                     records.append(rows[mode]); save('records.jsonl', rows[mode])
+                segment_cases += 1
                 print(json.dumps({'completed_cases': i+1, 'planned': len(cases)}), flush=True)
         validate_protocol(args.protocol, args.cases)
         if any(sha256(ROOT/f) != h for f,h in hashes.items()): raise ValueError('Ontology inputs changed during run')
+        if len(records) != len(cases)*len(MODES):
+            manifest.update(status='segment_complete', completed_cases=len(records)//len(MODES), planned_cases=len(cases))
+            return
         result = summarize(cases, records, extraction)
         result.update(cases_sha256=sha256(args.cases), source_manifest_sha256=sha256(DEFAULT_MANIFEST))
         (args.output/'summary.json').write_text(json.dumps(result, indent=2)+'\n')
