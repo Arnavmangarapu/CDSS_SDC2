@@ -1,0 +1,31 @@
+{
+  "task": "medication_safety",
+  "evidence_role": "development",
+  "runner": "evaluation.safety_live_pilot",
+  "research_question": "On the reused 108 developer-labeled cases, how do LLM-only warning decisions, production LLM clarification plus existing rules, and matched post-generation rule filtering compare with strong deterministic extraction?",
+  "primary_metrics": [
+    "exact_case_decisions",
+    "false_supported_fraction",
+    "useful_supported_warning_recall"
+  ],
+  "comparisons": [
+    "deterministic",
+    "llm_only",
+    "hybrid_fixed_proposal",
+    "llm_rule_filtered"
+  ],
+  "model": "gemini-3.5-flash-lite",
+  "failure_policy": "First attempt per generated answer. Single provider, temperature zero. At most three HTTP 429 transport recoveries, 4.2-second request interval; stop on daily quota. Errors remain in all-case denominators. Interrupted runs are incomplete.",
+  "manual_exposure_audit_complete": false,
+  "independent_review": {
+    "case_author_independent": false
+  },
+  "ontology_sha256": {
+    "datasets/ontologies/hpo/hp.obo": "a5092cbdf605f568403cf7380d9173014015692433b2cc631bc5c1b053876b1b",
+    "datasets/ontologies/mondo/mondo.obo": "fce4bccd97c4eb66161e88272ca0bd6ecd28c003afa878bbec8eae0ceb78fba8",
+    "datasets/drugcentral/structures.smiles.tsv": "5b81423a2ec1e2766e9666ec4a172d5a5b47045ea2cc032d1ba06085956bc1fc"
+  },
+  "inference_budget": "One LLM warning call and one unchanged production extraction call per case; deterministic and rule-filter arms have no further calls",
+  "gate_ablation_scope": "Same LLM warnings before/after intersection with rule eligibility from the observed production context. Extra extraction cost disclosed. Not a general clinical semantic verifier.",
+  "raw_extraction_scoring": "Exact name/status sets and exact source-phrase copies; raw allergy and list-status fields are not requested by the production schema and are not scored as if requested."
+}
