@@ -1,0 +1,42 @@
+{
+  "source_title": "An Adaptive Multi-Agent LLM-Based Clinical Decision Support System Integrating Biomedical RAG and Web Intelligence",
+  "authors": [
+    "Çağatay Umut Öğdü",
+    "Kübra Arslanoğlu",
+    "Mehmet Karaköse"
+  ],
+  "doi": "10.1109/ACCESS.2025.3613340",
+  "year": 2025,
+  "source_pdf_sha256": "bb6f5d7780d40da3d137baff3d3b750a4d209613f586df9917a444f9e1dab75c",
+  "source_table": 5,
+  "source_pdf_page": 12,
+  "source_printed_page": 167401,
+  "verification": "Table visually inspected; contextual methods text inspected",
+  "status": "external_reported_results_not_reproduced",
+  "results": [
+    {
+      "dataset": "MedQA",
+      "correct": 47,
+      "evaluated": 50,
+      "accuracy": 0.94,
+      "scoring": "Five-option exact match"
+    },
+    {
+      "dataset": "PubMedQA",
+      "correct": 44,
+      "evaluated": 50,
+      "accuracy": 0.88,
+      "scoring": "Free-text semantic-similarity threshold 0.80"
+    },
+    {
+      "dataset": "MedBullets",
+      "correct": 42,
+      "evaluated": 50,
+      "accuracy": 0.84,
+      "scoring": "Free-text semantic-similarity threshold 0.80"
+    }
+  ],
+  "iteration_budget": "Up to three iterations in the main study; separate iteration experiment is not pooled with Table 5",
+  "comparability": "Different question selections, tasks, scorers and model/iteration settings. No paired test or superiority calculation against our 36-case diagnosis or medication safety results.",
+  "local_qa_pilot": "255/300 planned arm attempts recorded; incomplete; PubMedQA yes/no/maybe classification differs from external free-text protocol; not resumed or pooled with new implementation."
+}
