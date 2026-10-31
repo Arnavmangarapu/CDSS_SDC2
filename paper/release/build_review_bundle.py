@@ -11,7 +11,8 @@ SAFE_JSON = {'evaluation/med_safety_cases.v1.json', 'evaluation/medqa_selection.
              'evaluation/protocol.draft.example.json', 'evaluation/safety_live_pilot.protocol.json'}
 PAPER_AGGREGATES = {'PAIRED_DEVELOPMENT_RESULTS_20261031.json', 'SAFETY_BASELINE_REGRESSION_20261031.json',
                     'BASE_PAPER_COMPARISON_20261031.json', 'SAFETY_LIVE_DEVELOPMENT_RESULTS_20261031.json',
-                    'CORPUS_AUDIT_20261031.json', 'EVALUATION_ENVIRONMENT_20261031.json'}
+                    'CORPUS_AUDIT_20261031.json', 'EVALUATION_ENVIRONMENT_20261031.json',
+                    'SAFETY_LIVE_PROTOCOL_CHAIN_20261031.json'}
 
 
 def allowed(path):

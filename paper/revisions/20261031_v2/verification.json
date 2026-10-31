@@ -1,0 +1,18 @@
+{
+  "author_blocks_unchanged": true,
+  "sections": 15,
+  "column_configurations_preserved": true,
+  "full_width_result_tables": 5,
+  "workflow_images": 1,
+  "references": 20,
+  "complete_safety_case_arm_records": 432,
+  "humanized_revised_passages": 14,
+  "clinical_validation": false,
+  "public_release": "Not published; local review candidate only",
+  "declarations": "Deferred at user request",
+  "rendered_pages": 8,
+  "all_pages_visually_inspected": true,
+  "visual_qa": "No clipped tables, overlapping text or missing columns observed; author block and full-width tables preserved.",
+  "detector_result": "detector_result.json",
+  "detector_note": "Provider estimate only, not evidence of authorship."
+}

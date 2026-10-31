@@ -1,0 +1,9 @@
+{
+  "provider": "ZeroGPT Basic Humanizer check",
+  "url": "https://www.zerogpt.com/ai-humanizer",
+  "scope": "14 reviewed humanized revision passages, excluding author contact details; citation renumbering followed separately",
+  "displayed_ai_probability_percent": 22.9,
+  "displayed_confidence_percent": 50,
+  "classification": "Checked Classification",
+  "interpretation": "Provider estimate only; does not establish authorship, originality or validity. No score-based rewriting was performed."
+}

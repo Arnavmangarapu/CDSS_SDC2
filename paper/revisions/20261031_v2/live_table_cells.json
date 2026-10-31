@@ -1,0 +1,27 @@
+[
+  [
+    "Method",
+    "Warning precision P and recall R",
+    "Exact case decisions; failed cases"
+  ],
+  [
+    "Deterministic extraction + rules",
+    "P 72/72 (100.0%); R 72/72 (100.0%)",
+    "108/108 (100.0%); 0 failed"
+  ],
+  [
+    "LLM-only warnings",
+    "P 49/65 (75.4%); R 49/72 (68.1%)",
+    "81/108 (75.0%); 1 failed"
+  ],
+  [
+    "Production LLM extraction + rules",
+    "P 69/69 (100.0%); R 69/72 (95.8%)",
+    "106/108 (98.1%); 2 failed"
+  ],
+  [
+    "Same LLM warnings + rule filter",
+    "P 46/46 (100.0%); R 46/72 (63.9%)",
+    "83/108 (76.9%); 3 failed"
+  ]
+]

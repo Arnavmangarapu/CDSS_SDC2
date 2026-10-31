@@ -1,0 +1,1064 @@
+{
+  "clinical_validation": false,
+  "modes": {
+    "deterministic": {
+      "attempted": 108,
+      "failed": 0,
+      "warning_precision": {
+        "numerator": 72,
+        "denominator": 72,
+        "value": 1.0
+      },
+      "warning_recall": {
+        "numerator": 72,
+        "denominator": 72,
+        "value": 1.0
+      },
+      "false_supported_fraction": {
+        "numerator": 0,
+        "denominator": 48,
+        "value": 0.0
+      },
+      "false_support_rate_on_negative_opportunities": {
+        "numerator": 0,
+        "denominator": 168,
+        "value": 0.0
+      },
+      "useful_supported_warning_recall": {
+        "numerator": 48,
+        "denominator": 48,
+        "value": 1.0
+      },
+      "supported_decision_coverage": {
+        "numerator": 48,
+        "denominator": 216,
+        "value": 0.222222
+      },
+      "unknown_allergy_abstention": {
+        "numerator": 24,
+        "denominator": 24,
+        "value": 1.0
+      },
+      "exact_case_decisions": {
+        "numerator": 108,
+        "denominator": 108,
+        "value": 1.0,
+        "wilson_95_descriptive": [
+          0.9657,
+          1.0
+        ]
+      }
+    },
+    "llm_only": {
+      "attempted": 108,
+      "failed": 1,
+      "warning_precision": {
+        "numerator": 49,
+        "denominator": 65,
+        "value": 0.753846
+      },
+      "warning_recall": {
+        "numerator": 49,
+        "denominator": 72,
+        "value": 0.680556
+      },
+      "false_supported_fraction": {
+        "numerator": 14,
+        "denominator": 51,
+        "value": 0.27451
+      },
+      "false_support_rate_on_negative_opportunities": {
+        "numerator": 14,
+        "denominator": 168,
+        "value": 0.083333
+      },
+      "useful_supported_warning_recall": {
+        "numerator": 37,
+        "denominator": 48,
+        "value": 0.770833
+      },
+      "supported_decision_coverage": {
+        "numerator": 51,
+        "denominator": 216,
+        "value": 0.236111
+      },
+      "unknown_allergy_abstention": {
+        "numerator": 11,
+        "denominator": 24,
+        "value": 0.458333
+      },
+      "exact_case_decisions": {
+        "numerator": 81,
+        "denominator": 108,
+        "value": 0.75,
+        "wilson_95_descriptive": [
+          0.6607,
+          0.8221
+        ]
+      }
+    },
+    "hybrid_fixed_proposal": {
+      "attempted": 108,
+      "failed": 2,
+      "warning_precision": {
+        "numerator": 69,
+        "denominator": 69,
+        "value": 1.0
+      },
+      "warning_recall": {
+        "numerator": 69,
+        "denominator": 72,
+        "value": 0.958333
+      },
+      "false_supported_fraction": {
+        "numerator": 0,
+        "denominator": 45,
+        "value": 0.0
+      },
+      "false_support_rate_on_negative_opportunities": {
+        "numerator": 0,
+        "denominator": 168,
+        "value": 0.0
+      },
+      "useful_supported_warning_recall": {
+        "numerator": 45,
+        "denominator": 48,
+        "value": 0.9375
+      },
+      "supported_decision_coverage": {
+        "numerator": 45,
+        "denominator": 216,
+        "value": 0.208333
+      },
+      "unknown_allergy_abstention": {
+        "numerator": 24,
+        "denominator": 24,
+        "value": 1.0
+      },
+      "exact_case_decisions": {
+        "numerator": 106,
+        "denominator": 108,
+        "value": 0.981481,
+        "wilson_95_descriptive": [
+          0.935,
+          0.9949
+        ]
+      }
+    },
+    "llm_rule_filtered": {
+      "attempted": 108,
+      "failed": 3,
+      "warning_precision": {
+        "numerator": 46,
+        "denominator": 46,
+        "value": 1.0
+      },
+      "warning_recall": {
+        "numerator": 46,
+        "denominator": 72,
+        "value": 0.638889
+      },
+      "false_supported_fraction": {
+        "numerator": 0,
+        "denominator": 34,
+        "value": 0.0
+      },
+      "false_support_rate_on_negative_opportunities": {
+        "numerator": 0,
+        "denominator": 168,
+        "value": 0.0
+      },
+      "useful_supported_warning_recall": {
+        "numerator": 34,
+        "denominator": 48,
+        "value": 0.708333
+      },
+      "supported_decision_coverage": {
+        "numerator": 34,
+        "denominator": 216,
+        "value": 0.157407
+      },
+      "unknown_allergy_abstention": {
+        "numerator": 12,
+        "denominator": 24,
+        "value": 0.5
+      },
+      "exact_case_decisions": {
+        "numerator": 83,
+        "denominator": 108,
+        "value": 0.768519,
+        "wilson_95_descriptive": [
+          0.6806,
+          0.838
+        ]
+      }
+    }
+  },
+  "scope": "Existing amlodipine label rules; structured_oracle is a component upper bound, not a fair raw-text competitor",
+  "uncertainty_note": "Warning events within cases/families are correlated; event fractions are descriptive and have no independent-event confidence interval.",
+  "paired_exact_case_decisions_exploratory": [
+    {
+      "a": "deterministic",
+      "b": "llm_only",
+      "a_only_exact": 27,
+      "b_only_exact": 0,
+      "exact_mcnemar_p": 1.4901161193847656e-08,
+      "holm_adjusted_p": 8.940696716308594e-08
+    },
+    {
+      "a": "deterministic",
+      "b": "hybrid_fixed_proposal",
+      "a_only_exact": 2,
+      "b_only_exact": 0,
+      "exact_mcnemar_p": 0.5,
+      "holm_adjusted_p": 1.0
+    },
+    {
+      "a": "deterministic",
+      "b": "llm_rule_filtered",
+      "a_only_exact": 25,
+      "b_only_exact": 0,
+      "exact_mcnemar_p": 5.960464477539063e-08,
+      "holm_adjusted_p": 2.980232238769531e-07
+    },
+    {
+      "a": "llm_only",
+      "b": "hybrid_fixed_proposal",
+      "a_only_exact": 2,
+      "b_only_exact": 27,
+      "exact_mcnemar_p": 1.6242265701293945e-06,
+      "holm_adjusted_p": 4.872679710388184e-06
+    },
+    {
+      "a": "llm_only",
+      "b": "llm_rule_filtered",
+      "a_only_exact": 2,
+      "b_only_exact": 4,
+      "exact_mcnemar_p": 0.6875,
+      "holm_adjusted_p": 1.0
+    },
+    {
+      "a": "hybrid_fixed_proposal",
+      "b": "llm_rule_filtered",
+      "a_only_exact": 23,
+      "b_only_exact": 0,
+      "exact_mcnemar_p": 2.384185791015625e-07,
+      "holm_adjusted_p": 9.5367431640625e-07
+    }
+  ],
+  "extraction": {
+    "raw_current_medications_match": {
+      "correct": 106,
+      "planned": 108
+    },
+    "raw_medication_name_status_match": {
+      "correct": 76,
+      "planned": 108
+    },
+    "raw_allergy_substance_match": {
+      "correct": 106,
+      "planned": 108
+    },
+    "merged_allergy_status_match": {
+      "correct": 106,
+      "planned": 108
+    },
+    "merged_medication_list_status_match": {
+      "correct": 106,
+      "planned": 108
+    },
+    "merged_current_medications_match": {
+      "correct": 106,
+      "planned": 108
+    },
+    "completed": 106,
+    "raw_allergy_status": "Not requested by the unchanged production JSON schema; no raw status accuracy is inferred",
+    "raw_medication_list_status": "Not requested by the unchanged production JSON schema",
+    "source_phrase_grounding": {
+      "exact": 124,
+      "emitted": 124
+    }
+  },
+  "case_scores": [
+    {
+      "case_id": "medsafe-amlodipine_allergy-01",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": false,
+      "llm_rule_filtered": false
+    },
+    {
+      "case_id": "medsafe-amlodipine_allergy-02",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-amlodipine_allergy-03",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-amlodipine_allergy-04",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-amlodipine_allergy-05",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-amlodipine_allergy-06",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-amlodipine_allergy-07",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-amlodipine_allergy-08",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-amlodipine_allergy-09",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-amlodipine_allergy-10",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-amlodipine_allergy-11",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-amlodipine_allergy-12",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-simvastatin_interaction-01",
+      "deterministic": true,
+      "llm_only": false,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": false
+    },
+    {
+      "case_id": "medsafe-simvastatin_interaction-02",
+      "deterministic": true,
+      "llm_only": false,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": false
+    },
+    {
+      "case_id": "medsafe-simvastatin_interaction-03",
+      "deterministic": true,
+      "llm_only": false,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": false
+    },
+    {
+      "case_id": "medsafe-simvastatin_interaction-04",
+      "deterministic": true,
+      "llm_only": false,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": false
+    },
+    {
+      "case_id": "medsafe-simvastatin_interaction-05",
+      "deterministic": true,
+      "llm_only": false,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": false
+    },
+    {
+      "case_id": "medsafe-simvastatin_interaction-06",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-simvastatin_interaction-07",
+      "deterministic": true,
+      "llm_only": false,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": false
+    },
+    {
+      "case_id": "medsafe-simvastatin_interaction-08",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-simvastatin_interaction-09",
+      "deterministic": true,
+      "llm_only": false,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": false
+    },
+    {
+      "case_id": "medsafe-simvastatin_interaction-10",
+      "deterministic": true,
+      "llm_only": false,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": false
+    },
+    {
+      "case_id": "medsafe-simvastatin_interaction-11",
+      "deterministic": true,
+      "llm_only": false,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": false
+    },
+    {
+      "case_id": "medsafe-simvastatin_interaction-12",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-both_warnings-01",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-both_warnings-02",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-both_warnings-03",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-both_warnings-04",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-both_warnings-05",
+      "deterministic": true,
+      "llm_only": false,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": false
+    },
+    {
+      "case_id": "medsafe-both_warnings-06",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-both_warnings-07",
+      "deterministic": true,
+      "llm_only": false,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": false
+    },
+    {
+      "case_id": "medsafe-both_warnings-08",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-both_warnings-09",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-both_warnings-10",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": false,
+      "llm_rule_filtered": false
+    },
+    {
+      "case_id": "medsafe-both_warnings-11",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-both_warnings-12",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-unknown_allergy-01",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-unknown_allergy-02",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-unknown_allergy-03",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-unknown_allergy-04",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-unknown_allergy-05",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-unknown_allergy-06",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-unknown_allergy-07",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-unknown_allergy-08",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-unknown_allergy-09",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-unknown_allergy-10",
+      "deterministic": true,
+      "llm_only": false,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": false
+    },
+    {
+      "case_id": "medsafe-unknown_allergy-11",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-unknown_allergy-12",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-conflicting_allergy-01",
+      "deterministic": true,
+      "llm_only": false,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": false
+    },
+    {
+      "case_id": "medsafe-conflicting_allergy-02",
+      "deterministic": true,
+      "llm_only": false,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": false
+    },
+    {
+      "case_id": "medsafe-conflicting_allergy-03",
+      "deterministic": true,
+      "llm_only": false,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": false
+    },
+    {
+      "case_id": "medsafe-conflicting_allergy-04",
+      "deterministic": true,
+      "llm_only": false,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": false
+    },
+    {
+      "case_id": "medsafe-conflicting_allergy-05",
+      "deterministic": true,
+      "llm_only": false,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": false
+    },
+    {
+      "case_id": "medsafe-conflicting_allergy-06",
+      "deterministic": true,
+      "llm_only": false,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": false
+    },
+    {
+      "case_id": "medsafe-conflicting_allergy-07",
+      "deterministic": true,
+      "llm_only": false,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": false
+    },
+    {
+      "case_id": "medsafe-conflicting_allergy-08",
+      "deterministic": true,
+      "llm_only": false,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": false
+    },
+    {
+      "case_id": "medsafe-conflicting_allergy-09",
+      "deterministic": true,
+      "llm_only": false,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-conflicting_allergy-10",
+      "deterministic": true,
+      "llm_only": false,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": false
+    },
+    {
+      "case_id": "medsafe-conflicting_allergy-11",
+      "deterministic": true,
+      "llm_only": false,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": false
+    },
+    {
+      "case_id": "medsafe-conflicting_allergy-12",
+      "deterministic": true,
+      "llm_only": false,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": false
+    },
+    {
+      "case_id": "medsafe-different_drug_allergy-01",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-different_drug_allergy-02",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-different_drug_allergy-03",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-different_drug_allergy-04",
+      "deterministic": true,
+      "llm_only": false,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-different_drug_allergy-05",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-different_drug_allergy-06",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-different_drug_allergy-07",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-different_drug_allergy-08",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-different_drug_allergy-09",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-different_drug_allergy-10",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-different_drug_allergy-11",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-different_drug_allergy-12",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-stopped_simvastatin-01",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-stopped_simvastatin-02",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-stopped_simvastatin-03",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-stopped_simvastatin-04",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-stopped_simvastatin-05",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-stopped_simvastatin-06",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-stopped_simvastatin-07",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-stopped_simvastatin-08",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-stopped_simvastatin-09",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-stopped_simvastatin-10",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-stopped_simvastatin-11",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-stopped_simvastatin-12",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-lookalike_names-01",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-lookalike_names-02",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-lookalike_names-03",
+      "deterministic": true,
+      "llm_only": false,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-lookalike_names-04",
+      "deterministic": true,
+      "llm_only": false,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-lookalike_names-05",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-lookalike_names-06",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-lookalike_names-07",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-lookalike_names-08",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-lookalike_names-09",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-lookalike_names-10",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-lookalike_names-11",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-lookalike_names-12",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-clean_negative-01",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-clean_negative-02",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-clean_negative-03",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-clean_negative-04",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-clean_negative-05",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-clean_negative-06",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-clean_negative-07",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-clean_negative-08",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-clean_negative-09",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-clean_negative-10",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-clean_negative-11",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    },
+    {
+      "case_id": "medsafe-clean_negative-12",
+      "deterministic": true,
+      "llm_only": true,
+      "hybrid_fixed_proposal": true,
+      "llm_rule_filtered": true
+    }
+  ],
+  "returned_model_versions": [
+    "gemini-3.5-flash-lite"
+  ],
+  "missing_model_version_traces": 3,
+  "evidence_role": "development",
+  "label_status": "Reused developer-authored cases; no independent clinical review",
+  "interpretation": "Fixed proposal and supplied label passages. Not full-report generation, live retrieval or clinical prescribing validation. Rule-filter arm reuses LLM warning generation and requires an additional production extraction call. Raw extraction name comparisons are exact and developer-labeled; empty target sets can be easy controls.",
+  "cases_sha256": "ed00878d7a5a62377e525f51794f46ac35389cfdf120526935d31a554f126992",
+  "source_manifest_sha256": "3ecb766b7dd00f233f50a8dcf481bfd0135d95add924ca3b852cbca7596d4667",
+  "audit": {
+    "planned_cases": 108,
+    "case_arm_records": 432,
+    "raw_extraction_records": 108,
+    "original_33_cases_preserved": true,
+    "case_sha256": "ed00878d7a5a62377e525f51794f46ac35389cfdf120526935d31a554f126992",
+    "final_records_sha256": "5cbb64a2226fe574fd0cd48d6b9b6a6965da3bbd382272e3f6355e40b3669bf9",
+    "private_extraction_sha256": "f73851c83b2868b4c3e3a6a5e649de7c19d38ce744eb0e63ee256dd1640a7284",
+    "failure_policy": "Controlled unavailable/invalid LLM extraction is failed rather than credited as deterministic fallback. One uncertain in-flight request counted failed. Derived filter dependency failures are not additional model calls.",
+    "output_privacy": "Only counts and non-content case IDs; raw JSON, patient-context fixtures and detailed generations remain in ignored private run directories.",
+    "recorded_transport_outcomes": 215,
+    "recorded_http_successes": 214,
+    "uncertain_inflight_request": "medsafe-both_warnings-10 / hybrid_fixed_proposal; not regenerated; conservatively failed"
+  },
+  "paired_test_limitation": "Case-family dependence and development-set reuse limit the interpretation of case-level paired tests; p-values are exploratory under independent-case assumptions, not confirmatory clinical evidence."
+}

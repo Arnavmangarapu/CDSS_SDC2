@@ -1,0 +1,38 @@
+[
+  [
+    "Task and system",
+    "Reported outcome and protocol"
+  ],
+  [
+    "Base paper MedQA [19]",
+    "47/50 (94%); five-option exact match"
+  ],
+  [
+    "Base paper PubMedQA [19]",
+    "44/50 (88%); free-text semantic threshold 0.80"
+  ],
+  [
+    "Base paper MedBullets [19]",
+    "42/50 (84%); free-text semantic threshold 0.80"
+  ],
+  [
+    "Current diagnosis",
+    "18/36 LLM; 19/36 text; 17/36 graph plus text; open-ended key matching"
+  ],
+  [
+    "Current medication warnings",
+    "108 reused synthetic cases; fixed proposal and supplied label passages; Table 4"
+  ],
+  [
+    "Current adapted QA pilot",
+    "255/300 planned arm attempts; incomplete; different selection and scoring"
+  ],
+  [
+    "Inference budget",
+    "Base: up to three iterations. Current comparisons: adaptive retries disabled; models and access differ"
+  ],
+  [
+    "Comparison status",
+    "External reported context; no head-to-head replication or cross-paper superiority claim"
+  ]
+]
