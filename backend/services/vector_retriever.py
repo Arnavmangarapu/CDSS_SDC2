@@ -5,6 +5,7 @@ from pathlib import Path
 from backend.schemas.patient import PatientContext
 from backend.config import settings
 from backend.schemas.evidence import SourcePassage
+from backend.services.telemetry import stage
 
 class VectorRetriever:
     def __init__(self):
@@ -12,7 +13,9 @@ class VectorRetriever:
             from qdrant_client import QdrantClient
             from sentence_transformers import SentenceTransformer
             self.client = QdrantClient(settings.QDRANT_URL)
-            self.model = SentenceTransformer('pritamdeka/S-PubMedBert-MS-MARCO')
+            self.model = SentenceTransformer(settings.VECTOR_EMBEDDER_MODEL,
+                                              revision=settings.VECTOR_EMBEDDER_REVISION,
+                                              local_files_only=True)
             self.collection_name = settings.VECTOR_COLLECTION_TEXTBOOKS
             self.is_ready = True
             self.reranker = None
@@ -34,7 +37,9 @@ class VectorRetriever:
         pass
 
     def retrieve(self, context: PatientContext, top_k: int = 5) -> List[Dict[str, Any]]:
+        self.last_error = None
         if not self.is_ready:
+            self.last_error = "Vector retriever unavailable"
             return []
 
         base_query = context.expanded_query if context.expanded_query else context.raw_input
@@ -43,10 +48,12 @@ class VectorRetriever:
         query = " ".join(query_parts)
 
         try:
-            query_vec = self.model.encode(query).tolist()
-            search_result = self.client.query_points(
-                collection_name=self.collection_name, query=query_vec, limit=max(20, top_k)
-            )
+            with stage("embedding"):
+                query_vec = self.model.encode(query).tolist()
+            with stage("vector_search"):
+                search_result = self.client.query_points(
+                    collection_name=self.collection_name, query=query_vec, limit=max(20, top_k)
+                )
             results = []
             for hit in search_result.points:
                 results.append({
@@ -57,13 +64,15 @@ class VectorRetriever:
                     })
             reranker = getattr(self, "reranker", None)
             if reranker is not None and results:
-                scores = reranker.predict([(query, item["text"]) for item in results], show_progress_bar=False)
+                with stage("reranking"):
+                    scores = reranker.predict([(query, item["text"]) for item in results], show_progress_bar=False)
                 for item, score in zip(results, scores):
                     item["metadata"]["reranker_score"] = float(score)
                     item["score"] = 1 / (1 + math.exp(-max(-50, min(50, float(score)))))
                 results.sort(key=lambda item: item["score"], reverse=True)
             return results[:top_k]
         except Exception as e:
+            self.last_error = type(e).__name__
             print(f"Vector search failed: {e}")
             return []
 
@@ -95,7 +104,8 @@ class VectorRetriever:
         dense_scores = {}
         limitations: list[str] = []
         try:
-            vector = self.model.encode(query)
+            with stage("embedding"):
+                vector = self.model.encode(query)
             vector = vector.tolist() if hasattr(vector, "tolist") else list(vector)
         except Exception as exc:
             return [], [f"Authoritative query embedding unavailable: {exc}"]
@@ -103,8 +113,9 @@ class VectorRetriever:
             if not any(entry.source_type == kind for entry in active.values()):
                 continue
             try:
-                hits = self.client.query_points(collection_name=collection, query=vector,
-                                                limit=top_k, with_payload=True).points
+                with stage("vector_search"):
+                    hits = self.client.query_points(collection_name=collection, query=vector,
+                                                    limit=top_k, with_payload=True).points
             except Exception as exc:
                 limitations.append(f"{kind} collection unavailable: {exc}")
                 continue
@@ -126,7 +137,8 @@ class VectorRetriever:
         # Both collections use the same encoder. Never impose a source-type rank.
         reranker = getattr(self, "reranker", None)
         if reranker is not None and passages:
-            scores = reranker.predict([(query, passage.passage) for passage in passages], show_progress_bar=False)
+            with stage("reranking"):
+                scores = reranker.predict([(query, passage.passage) for passage in passages], show_progress_bar=False)
             ordered = sorted(zip(scores, passages), key=lambda pair: (-float(pair[0]), pair[1].id))
             passages = [passage for _, passage in ordered]
         else:

@@ -135,7 +135,8 @@ def test_replay_command_writes_versioned_provenance_and_case_errors(tmp_path, mo
     assert manifest["prompt_sha256"]
     assert metrics["clinical_validation"] is False
     assert metrics["modes"]["llm_only"]["failed_cases"] == 1
-    assert metrics["modes"]["llm_only"]["diagnostic_top1"]["value"] is None
+    assert metrics["modes"]["llm_only"]["diagnostic_top1"]["value"] == 0
+    assert metrics["modes"]["llm_only"]["completed_only_diagnostic_top1"]["value"] is None
     assert len((output / "case_errors.jsonl").read_text().splitlines()) == 3
 
 
@@ -159,7 +160,7 @@ def test_multidisease_pilot_hides_aliases_and_covers_four_strata():
                for case in cases)
 
 
-def test_diagnostic_strata_keep_failure_denominators_and_macro_unavailable():
+def test_diagnostic_strata_keep_failures_in_primary_denominators():
     cases = [
         {"case_id": "a", "cohort": "diagnostic", "disease_stratum": "alpha",
          "reference_diagnosis_aliases": ["A"]},
@@ -174,8 +175,8 @@ def test_diagnostic_strata_keep_failure_denominators_and_macro_unavailable():
     assert result["llm_only"]["macro_top1"] == 1
     assert result["llm_only"]["diseases"]["alpha"]["top1"]["numerator"] == 1
     assert result["graph_text"]["diseases"]["beta"]["failed"] == 1
-    assert result["graph_text"]["diseases"]["beta"]["top1"]["value"] is None
-    assert result["graph_text"]["macro_top1"] is None
+    assert result["graph_text"]["diseases"]["beta"]["top1"]["value"] == 0
+    assert result["graph_text"]["macro_top1"] == .5
 
 
 def test_result_writer_serializes_source_dates(tmp_path):
@@ -190,3 +191,13 @@ def test_provider_mismatch_is_flagged_for_ablation_interpretation():
                for mode, provider in zip(MODES, ("Gemini", "Cohere", "Gemini"))]
     result = provider_consistency([_case()], records)
     assert result["mismatched_case_ids"] == ["fixture"]
+
+
+def test_returned_version_drift_is_visible_despite_matching_alias():
+    records = [{"case_id": "fixture", "mode": mode, "status": "ok",
+                "provider_trace": {"fusion": {"provider": "Gemini", "model": "alias",
+                                                "returned_model_version": version}}}
+               for mode, version in zip(MODES, ("version-a", "version-b", "version-a"))]
+    result = provider_consistency([_case()], records)
+    assert result["matched_case_ids"] == ["fixture"]
+    assert result["returned_version_mismatched_case_ids"] == ["fixture"]

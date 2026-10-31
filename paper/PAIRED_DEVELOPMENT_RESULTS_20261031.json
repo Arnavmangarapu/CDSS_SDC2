@@ -1,0 +1,314 @@
+{
+  "clinical_validation": false,
+  "denominator_policy": "All planned cases; failed and empty outputs count incorrect",
+  "bootstrap": {
+    "replicates": 2000,
+    "seed": 20261031,
+    "unit": "case",
+    "interval": "percentile; descriptive, unstable with few discordant pairs"
+  },
+  "per_mode": {
+    "llm_only": {
+      "correct": 18,
+      "attempted": 36,
+      "failed": 0,
+      "accuracy": 0.5,
+      "wilson_95": [
+        0.3447,
+        0.6553
+      ]
+    },
+    "text_rag": {
+      "correct": 19,
+      "attempted": 36,
+      "failed": 0,
+      "accuracy": 0.527778,
+      "wilson_95": [
+        0.3701,
+        0.6801
+      ]
+    },
+    "graph_text": {
+      "correct": 17,
+      "attempted": 36,
+      "failed": 0,
+      "accuracy": 0.472222,
+      "wilson_95": [
+        0.3199,
+        0.6299
+      ]
+    }
+  },
+  "comparisons": [
+    {
+      "a": "llm_only",
+      "b": "text_rag",
+      "case_count": 36,
+      "a_only_correct": 2,
+      "b_only_correct": 3,
+      "both_correct": 16,
+      "both_incorrect": 15,
+      "difference_a_minus_b": -0.027778,
+      "paired_bootstrap_95": [
+        -0.138889,
+        0.083333
+      ],
+      "exact_mcnemar_two_sided_p": 1.0,
+      "holm_adjusted_p": 1.0
+    },
+    {
+      "a": "llm_only",
+      "b": "graph_text",
+      "case_count": 36,
+      "a_only_correct": 4,
+      "b_only_correct": 3,
+      "both_correct": 14,
+      "both_incorrect": 15,
+      "difference_a_minus_b": 0.027778,
+      "paired_bootstrap_95": [
+        -0.111111,
+        0.166667
+      ],
+      "exact_mcnemar_two_sided_p": 1.0,
+      "holm_adjusted_p": 1.0
+    },
+    {
+      "a": "text_rag",
+      "b": "graph_text",
+      "case_count": 36,
+      "a_only_correct": 2,
+      "b_only_correct": 0,
+      "both_correct": 17,
+      "both_incorrect": 17,
+      "difference_a_minus_b": 0.055556,
+      "paired_bootstrap_95": [
+        0.0,
+        0.138889
+      ],
+      "exact_mcnemar_two_sided_p": 0.5,
+      "holm_adjusted_p": 1.0
+    }
+  ],
+  "case_scores": [
+    {
+      "case_id": "medqa-us-test-0035",
+      "llm_only": true,
+      "text_rag": true,
+      "graph_text": true
+    },
+    {
+      "case_id": "medqa-us-test-0130",
+      "llm_only": true,
+      "text_rag": true,
+      "graph_text": true
+    },
+    {
+      "case_id": "medqa-us-test-0154",
+      "llm_only": false,
+      "text_rag": false,
+      "graph_text": false
+    },
+    {
+      "case_id": "medqa-us-test-0159",
+      "llm_only": false,
+      "text_rag": false,
+      "graph_text": false
+    },
+    {
+      "case_id": "medqa-us-test-0167",
+      "llm_only": false,
+      "text_rag": false,
+      "graph_text": false
+    },
+    {
+      "case_id": "medqa-us-test-0188",
+      "llm_only": false,
+      "text_rag": false,
+      "graph_text": false
+    },
+    {
+      "case_id": "medqa-us-test-0256",
+      "llm_only": true,
+      "text_rag": false,
+      "graph_text": false
+    },
+    {
+      "case_id": "medqa-us-test-0282",
+      "llm_only": true,
+      "text_rag": true,
+      "graph_text": true
+    },
+    {
+      "case_id": "medqa-us-test-0303",
+      "llm_only": false,
+      "text_rag": false,
+      "graph_text": false
+    },
+    {
+      "case_id": "medqa-us-test-0335",
+      "llm_only": true,
+      "text_rag": true,
+      "graph_text": true
+    },
+    {
+      "case_id": "medqa-us-test-0359",
+      "llm_only": true,
+      "text_rag": true,
+      "graph_text": true
+    },
+    {
+      "case_id": "medqa-us-test-0374",
+      "llm_only": false,
+      "text_rag": false,
+      "graph_text": false
+    },
+    {
+      "case_id": "medqa-us-test-0392",
+      "llm_only": true,
+      "text_rag": true,
+      "graph_text": true
+    },
+    {
+      "case_id": "medqa-us-test-0529",
+      "llm_only": true,
+      "text_rag": true,
+      "graph_text": true
+    },
+    {
+      "case_id": "medqa-us-test-0545",
+      "llm_only": false,
+      "text_rag": false,
+      "graph_text": false
+    },
+    {
+      "case_id": "medqa-us-test-0584",
+      "llm_only": false,
+      "text_rag": false,
+      "graph_text": false
+    },
+    {
+      "case_id": "medqa-us-test-0594",
+      "llm_only": false,
+      "text_rag": false,
+      "graph_text": false
+    },
+    {
+      "case_id": "medqa-us-test-0603",
+      "llm_only": true,
+      "text_rag": true,
+      "graph_text": true
+    },
+    {
+      "case_id": "medqa-us-test-0632",
+      "llm_only": false,
+      "text_rag": true,
+      "graph_text": true
+    },
+    {
+      "case_id": "medqa-us-test-0668",
+      "llm_only": true,
+      "text_rag": true,
+      "graph_text": false
+    },
+    {
+      "case_id": "medqa-us-test-0671",
+      "llm_only": true,
+      "text_rag": true,
+      "graph_text": true
+    },
+    {
+      "case_id": "medqa-us-test-0711",
+      "llm_only": true,
+      "text_rag": true,
+      "graph_text": true
+    },
+    {
+      "case_id": "medqa-us-test-0843",
+      "llm_only": true,
+      "text_rag": true,
+      "graph_text": true
+    },
+    {
+      "case_id": "medqa-us-test-0853",
+      "llm_only": true,
+      "text_rag": true,
+      "graph_text": false
+    },
+    {
+      "case_id": "medqa-us-test-0917",
+      "llm_only": false,
+      "text_rag": false,
+      "graph_text": false
+    },
+    {
+      "case_id": "medqa-us-test-1002",
+      "llm_only": false,
+      "text_rag": false,
+      "graph_text": false
+    },
+    {
+      "case_id": "medqa-us-test-1082",
+      "llm_only": true,
+      "text_rag": true,
+      "graph_text": true
+    },
+    {
+      "case_id": "medqa-us-test-1092",
+      "llm_only": false,
+      "text_rag": false,
+      "graph_text": false
+    },
+    {
+      "case_id": "medqa-us-test-1094",
+      "llm_only": false,
+      "text_rag": true,
+      "graph_text": true
+    },
+    {
+      "case_id": "medqa-us-test-1170",
+      "llm_only": false,
+      "text_rag": false,
+      "graph_text": false
+    },
+    {
+      "case_id": "medqa-us-test-1174",
+      "llm_only": false,
+      "text_rag": false,
+      "graph_text": false
+    },
+    {
+      "case_id": "medqa-us-test-1189",
+      "llm_only": false,
+      "text_rag": true,
+      "graph_text": true
+    },
+    {
+      "case_id": "medqa-us-test-1228",
+      "llm_only": true,
+      "text_rag": false,
+      "graph_text": false
+    },
+    {
+      "case_id": "medqa-us-test-1243",
+      "llm_only": false,
+      "text_rag": false,
+      "graph_text": false
+    },
+    {
+      "case_id": "medqa-us-test-1254",
+      "llm_only": true,
+      "text_rag": true,
+      "graph_text": true
+    },
+    {
+      "case_id": "medqa-us-test-1258",
+      "llm_only": true,
+      "text_rag": true,
+      "graph_text": true
+    }
+  ],
+  "interpretation": "No significant difference does not establish equivalence; p-values do not repair development-set reuse.",
+  "evidence_role": "development",
+  "cases_sha256": "ef0304e8d907099a7441571a09370eb0ddb4e1a1db93d63e844db595cc8a8a45",
+  "records_sha256": "87ed969b3b75902c675854d9997e291f996fc8bf83573ede1bba2a8b503ff056"
+}

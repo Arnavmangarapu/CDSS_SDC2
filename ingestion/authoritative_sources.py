@@ -231,7 +231,8 @@ def main() -> None:
         from qdrant_client import QdrantClient
         from sentence_transformers import SentenceTransformer
         client = QdrantClient(settings.QDRANT_URL)
-        embedder = SentenceTransformer("pritamdeka/S-PubMedBert-MS-MARCO")
+        embedder = SentenceTransformer(settings.VECTOR_EMBEDDER_MODEL,
+                                        revision=settings.VECTOR_EMBEDDER_REVISION, local_files_only=True)
         print(index_sources(manifest, client, embedder))
 
 

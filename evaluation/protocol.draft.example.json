@@ -1,0 +1,19 @@
+{
+  "status": "draft_awaiting_independent_material_and_review",
+  "task": "medication_safety",
+  "evidence_role": "development",
+  "research_question": "Does evidence and uncertainty handling reduce incorrect supported warnings while retaining useful supported decisions within the declared rule scope?",
+  "primary_metrics": ["false_supported_fraction", "useful_supported_warning_recall", "unknown_allergy_abstention"],
+  "comparisons": ["lexical_vs_deterministic", "llm_only_vs_hybrid_fixed_proposal"],
+  "model": "gemini-3.5-flash-lite",
+  "failure_policy": "All planned cases retained; failed outputs are failures, not exclusions. No regenerated answers. Up to three HTTP 429 transport retries; stop on daily quota.",
+  "manual_exposure_audit_complete": false,
+  "independent_review": {
+    "case_author_independent": false,
+    "ratings_path": null,
+    "reviewer_qualifications": {}
+  },
+  "source_scope": "Existing one-drug pinned label rules; no independently reviewed multi-drug expansion",
+  "primary_comparison": "To be specified before outcomes are inspected",
+  "sample_size_rationale": "To be specified; 100 is a practical target, not a completed power analysis"
+}

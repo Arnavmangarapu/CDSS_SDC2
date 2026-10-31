@@ -18,6 +18,8 @@ class Settings(BaseSettings):
 
     QDRANT_URL: str = "http://localhost:6333"
     VECTOR_COLLECTION_TEXTBOOKS: str = "medical_textbooks_v2"
+    VECTOR_EMBEDDER_MODEL: str = "pritamdeka/S-PubMedBert-MS-MARCO"
+    VECTOR_EMBEDDER_REVISION: str = "96786c7024f95c5aac7f2b9a18086c7b97b23036"
     VECTOR_RERANKER_MODEL: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
     VECTOR_RERANKER_REVISION: str = "233902d25c440f23af6f7d6e94d2946bac0bee0a"
     VECTOR_COLLECTION_PUBMEDQA: str = "pubmedqa_contexts"

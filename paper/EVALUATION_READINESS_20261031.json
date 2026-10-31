@@ -1,0 +1,26 @@
+{
+  "status": "awaiting_independent_authorship_and_clinical_review",
+  "clinical_validation": false,
+  "medqa_candidate_availability": {
+    "eligible_total": 89,
+    "excluded": 38,
+    "available": 51,
+    "by_step": {
+      "step2&3": 37,
+      "step1": 14
+    }
+  },
+  "registry_sha256": "ff6647ab9bc01a1b2347dbab311276c4650a4eb9ed0c7ea53f1882cd011dccc8",
+  "independent_case_author_available": false,
+  "clinical_reviewer_available": false,
+  "held_out_runs_started": false,
+  "manuscript_declarations": "Deferred at author request",
+  "corpus_preflight": "Read-only audit complete; no detected exact long-stem or structured QA leakage; partial/paraphrase leakage not ruled out",
+  "declarations": "Deferred at author request",
+  "verification": {
+    "offline_passed": 89,
+    "live_llm_test_deselected": 1,
+    "asgi_asset_test_passed": 1,
+    "cached_pinned_retrieval_smoke": "5 hits; no LLM calls or database writes"
+  }
+}

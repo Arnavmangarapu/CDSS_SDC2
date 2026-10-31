@@ -1,0 +1,114 @@
+[
+  {
+    "old": "Evidence Linked Graph RAG for Clinical Claim Review",
+    "new": "Evidence Provenance and Uncertainty Handling in a Clinical Review Prototype"
+  },
+  {
+    "old": "A Technical Feasibility Study Using Examination Vignettes and Synthetic Cases",
+    "new": "Development Evaluation Using Examination Vignettes and Synthetic Cases"
+  },
+  {
+    "old": "A retrieved citation may identify a source but fail to demonstrate that the source supports a clinical claim. We have created a graph-based retrieval-augmented generation (Graph RAG) prototype that separates candidate generation from source verification and keeps track of missing patient information. We assessed 36 selected exam vignettes, 10 retrieval queries on 26 pinned passages, 108 synthetic medication safety cases, and 158 provenance controls and modifications. Top-1 answer-key agreement was 18/36 for the large language model (LLM) alone, 19/36 for text RAG and 17/36 for graph plus text RAG. The revised graph returned candidates for 33/36 cases. The precision at rank 1 was 0.900 and all 12 directly relevant query passage pairs were retrieved in the first five results. Both structured and text-extracted fact paths recovered 72/72 expected warnings and kept uncertainty for 24/24 unknown or conflicting allergy cases. The verifier accepted 26/26 valid controls and rejected 132/132 alterations. The revisions improved retrieval ordering and fixed observed extraction failures but did not show a diagnostic advantage from the graph. These development results demonstrate technical feasibility. Clinical claim support and patient applicability have not yet been validated.",
+    "new": "We created a prototype of a retrieval augmented clinical review system which keeps a record of the sources used and maintains a state of uncertainty whenever patient information is missing. Candidate information is provided by means of graph and textbook retrieval, and separate verification checks are carried out using pinned source records and bounded medication rules. During the development phase we used 36 examination vignettes, ten retrieval queries, 108 synthetic medication cases and 158 provenance controls and alterations. When compared to the answer key, the LLM on its own achieved an agreement of 18 out of 36, text retrieval gave 19 out of 36 and graph plus text retrieval yielded 17 out of 36; exploratory paired tests did not provide evidence of a difference between the approaches. The revised implementation recovered all 72 of the expected warning events and retained uncertainty in all 24 of the cases where the allergy information was unknown or conflicting within the original set of synthetic cases. All 26 of the valid provenance controls were accepted and all 132 of the constructed alterations were rejected. Because these datasets were used to guide debugging, the figures reported here are development and regression results and not the results of independent validation. The repairs made restored the candidate retrieval function and corrected the extraction failures that had been observed, but they did not demonstrate any diagnostic benefit from the graph. Further clinical review and testing on cases that had not been touched are still necessary; general clinical claim support and patient applicability have not been validated."
+  },
+  {
+    "old": "Keywords: clinical decision support; retrieval augmented generation; knowledge graph; source provenance; medication safety; feasibility evaluation.",
+    "new": "Keywords: clinical decision support; source provenance; uncertainty handling; medication safety; development evaluation."
+  },
+  {
+    "old": "Clinical claim review goes beyond retrieval and includes checks. A source checksum can detect that a document has been altered, but it cannot show that a passage implies a recommendation. The TRIPOD-LLM guideline informed how we reported model settings, evaluation data and study limitations [7]. This is a technical development study; we do not claim to have completed a validation process for clinical deployment.",
+    "new": "Just identifying a source is not enough when it comes to clinical claim review. A checksum may pick up on changed bytes, but it can't verify that a passage supports a recommendation or is relevant to a specific patient. The TRIPOD-LLM guideline was used to guide our reporting of the model settings, the evaluation data and the limitations [7]. ALCE assesses the generated answers together with the quality of the citations, making a distinction between citation support and the mere presence of references [8]. SciFact separately evaluates whether scientific evidence supports or contradicts a claim and identifies the reasons for that [9]. These tasks make clear the limits of our implementation: it only checks the identity of the pinned source and a limited number of medication rules, while arbitrary clinical claims are not verified. We have not carried out an independent evaluation of general semantic support nor completed the validation needed for clinical use."
+  },
+  {
+    "old": "The extractor asks for structured JSON and validates the fields that are returned. It performs deterministic checks to extract the explicit medication and allergy statements from the input and to preserve any missing or conflicting information. Symptom linking is restricted to the Human Phenotype Ontology (HPO), condition linking to MONDO and medication linking to the drug vocabulary [8,9]. The restriction of the vocabularies means that a shared name will not be mapped to an entity of a completely different type. Missing allergy documentation remains unknown rather than being interpreted as a negative allergy history.",
+    "new": "The extractor asks for structured JSON and validates the fields that are returned. It performs deterministic checks to extract the explicit medication and allergy statements from the input and to preserve any missing or conflicting information. Symptom linking is restricted to the Human Phenotype Ontology (HPO), condition linking to MONDO and medication linking to the drug vocabulary [10,11]. The restriction of the vocabularies means that a shared name will not be mapped to an entity of a completely different type. Missing allergy documentation remains unknown rather than being interpreted as a negative allergy history."
+  },
+  {
+    "old": "The active textbook collection has 1,134 passages drawn from the full local First Aid and Pathoma files. The text is broken down into 150 word chunks with 20 word overlap. S-PubMedBert-MS-MARCO generates 768 dimensional embeddings which Qdrant then compares using cosine similarity [10]. Dense retrieval returns 20 candidates which are then re-ranked by a local cross encoder to give a final set of 5 passages [11]. Source file hashes and chunk IDs are all recorded at ingestion.",
+    "new": "The active textbook collection consists of 1,134 passages from the local First Aid and Pathoma text files, taken from the MedQA textbook release [5]. Text was divided into 150-word chunks with a 20-word overlap. S-PubMedBert-MS-MARCO generates 768-dimensional embeddings for cosine search in Qdrant [12]. Dense retrieval retrieves 20 candidates, which are reranked by a local cross encoder to keep five passages [13]. Ingestion records source hashes and chunk identifiers. The presence of the dataset does not grant the right to redistribute the underlying books. The repository does not contain the text of the books. Acquisition and reuse terms require separate checking."
+  },
+  {
+    "old": "The corpus in question included 17 passages from a single NICE guideline topic and nine passages from a single DailyMed product label [12,13]. The exact source titles and identifiers are listed in the references for reproducibility. This group of passages offers a limited test of the system's ability to handle sources; it does not cover a wide range of guidelines or medications. The improvements made to the corpus and the graph did not alter the trained weights of the language model.",
+    "new": "The corpus in question included 17 passages from a single NICE guideline topic and nine passages from a single DailyMed product label [14,15]. The exact source titles and identifiers are listed in the references for reproducibility. This group of passages offers a limited test of the system's ability to handle sources; it does not cover a wide range of guidelines or medications. The improvements made to the corpus and the graph did not alter the trained weights of the language model."
+  },
+  {
+    "old": "Top-1 and top-3 agreement used a frozen normalized alias procedure and included all 36 cases in each denominator. Differentials that were empty or not available were considered as nonmatches. Wilson intervals are given here as estimates of the descriptive uncertainty. For the 10 retrieval probes, relevance was assessed by the developers against the 26 pinned passages, comprising 12 pairs of query passages that provided direct answers and a checklist of 13 required facts. The 108 synthetic safety cases used a fixed proposal together with the supplied label passages. The provenance tests consisted of 26 valid controls and 132 constructed alterations. None of the reference labels were subject to independent clinical adjudication.",
+    "new": "Top-1 and top-3 agreement used fixed normalised aliases, with failed and empty outputs treated as mismatches in all 36 cases. The observed proportions are characterised by Wilson intervals. Per-case discordances were assessed using exploratory two-sided exact McNemar tests; Holm correction was applied for three pairwise comparisons. These tests do not prove equivalence, nor do they eliminate development-set bias. Developers evaluated 26 passages against 10 retrieval queries, identifying 12 directly relevant pairs and 13 facts. Synthetic medication tests supplied a fixed proposal and label passages to deterministic extraction and safety components. They did not test the complete pipeline with LLMs. Clinical labels were not adjudicated independently."
+  },
+  {
+    "old": "5.1 Diagnostic agreement and graph coverage",
+    "new": "5.1 Development diagnostic agreement and graph coverage"
+  },
+  {
+    "old": "Table 2 shows the revised diagnostic results. Text RAG obtained 19 out of 36 top 1 matches, yielding one additional match compared with LLM only, a difference of 2.8 percentage points. Graph plus text RAG achieved 17 out of 36 and stayed below both other configurations. The respective 95 percent Wilson intervals were 34.5 to 65.5 percent, 37.0 to 68.0 percent and 32.0 to 63.0 percent for the LLM only, text RAG and graph plus text RAG. These small-sample estimates do not establish a reliable diagnostic advantage.",
+    "new": "Table 2 shows development-set answer-key agreement: 19/36 for text retrieval, 18/36 for LLM-only and 17/36 for graph plus text. The Wilson 95% intervals were 37.0-68.0%, 34.5-65.5%, and 32.0-63.0% respectively. The discordant successes were LLM-only vs. text: 2 vs. 3; LLM-only vs. graph plus text: 4 vs. 3; text vs. graph plus text: 2 vs. 0. Exact McNemar p-values were 1.00, 1.00, and 0.50. All Holm-adjusted p-values were 1.00. These exploratory comparisons do not show diagnostic superiority nor do they show equivalence."
+  },
+  {
+    "old": "Table 2 Diagnostic agreement on 36 examination vignettes",
+    "new": "Table 2 Development agreement on 36 examination vignettes"
+  },
+  {
+    "old": "5.2 Retrieval quality",
+    "new": "5.2 Development retrieval checks"
+  },
+  {
+    "old": "As Table 3 shows, global reranking improved the early retrieval results for the frozen probes, with precision at rank one increasing from 0.600 to 0.900 and micro recall among the top five results rising from 0.667 to 1.000. For all four drug label queries, the reranking method retrieved a directly relevant passage at rank one, whereas in the previous ordering the first relevant passage for each of them was at rank six. The MRR at ten also increased from 0.667 to 0.925.",
+    "new": "As Table 3 shows, global reranking improved the early retrieval results for the development probes, with precision at rank one increasing from 0.600 to 0.900 and micro recall among the top five results rising from 0.667 to 1.000. For all four drug label queries, the reranking method retrieved a directly relevant passage at rank one, whereas in the previous ordering the first relevant passage for each of them was at rank six. The MRR at ten also increased from 0.667 to 0.925."
+  },
+  {
+    "old": "Table 3 Pinned source retrieval on ten queries",
+    "new": "Table 3 Development retrieval on ten queries"
+  },
+  {
+    "old": "5.3 Medication safety components",
+    "new": "5.3 Medication safety regression checks"
+  },
+  {
+    "old": "Table 4 Medication safety component results",
+    "new": "Table 4 Medication safety regression results"
+  },
+  {
+    "old": "In the four cases that were recovered the phrase 'No allergy history was recorded' appeared. Rather than regard the phrase as indicating a known allergy status, the improved extractor kept the allergy status as unknown. This shows that the failure observed had been corrected on the frozen challenge set. The test included all the label passages and made use of a fixed proposal; it did not examine the generation of language model treatment suggestions, live source retrieval or prescribing safety in patients.",
+    "new": "The four repaired cases had the note \"No allergy history was recorded.\" Keeping the allergy status unknown fixed a failure that was seen in the unchanged regression suite. For the 108 cases a lexical baseline had warning precision of 43 out of 85 (50.6 %) and recall of 43 out of 72 (59.7 %). Deterministic extraction and intended-facts checks each had precision and recall of 72 out of 72. The lexical comparator does not pay attention to negation or medication timing; its lower score does not prove that an LLM is better. The tests gave all label passages and a fixed proposal. They did not use LLM extraction, live retrieval, treatment generation or independent prescribing-safety validation."
+  },
+  {
+    "old": "Median retrieval-only latency increased from 40.8 ms to 688.4 ms as a result of reranking, and the 95th percentile rose from 204.1 ms to 1,098.8 ms. The median end-to-end latencies were 7.62 seconds for the LLM alone, 7.93 seconds for text RAG and 8.29 seconds for graph plus text RAG, the 95th percentiles being 10.12 seconds, 10.94 seconds and 13.04 seconds respectively. The end-to-end figures take into account evaluation pacing and transport recovery waits, so they must not be regarded as representing production throughput.",
+    "new": "On the ten development probes the median retrieval-only latency went up from 40.8 milliseconds to 688.4 milliseconds after reranking; the 95th percentile rose from 204.1 milliseconds to 1,098.8 milliseconds. These exploratory measurements show the tradeoff in this set of data. We omitted end-to-end timings because the evaluation wrapper mixed request pacing and transport recovery waits with analysis time."
+  },
+  {
+    "old": "The clearest findings concern implementation behavior. In the updated system, known source passages were ranked higher, all 108 synthesis outputs passed processing checks, graph candidate retrieval was restored and the allergy uncertainty warnings which had been missed earlier were recovered. However, the inclusion of the graph did not lead to better answer key agreement. These development results demonstrate technical feasibility. Clinical claim support and patient applicability have not yet been validated.",
+    "new": "This prototype separates candidate retrieval from source integrity checks and keeps missing allergy information inside a limited medication-rule scope. Development checks recorded repaired retrieval, output processing and extraction behavior. Development checks did not show that the graph improves agreement with the answer key or that real citations give clinical support. The next evaluation must test useful supported decisions, as well as wrong support and abstention on cases that were written by others and reviewed by clinicians. Until those results come the system should be called a development prototype."
+  },
+  {
+    "old": "Implementation code, evaluation scripts, source manifests and dated result summaries are available in the project repository [14]. Large source datasets, local database backups, provider credentials and raw evaluation runs are excluded from the Git repository. Public examination vignettes and developer generated synthetic cases were used; no patient records were collected. The retained manifests and local outputs document the evaluated configuration and source versions.",
+    "new": "Implementation code, evaluation scripts, source manifests and overall development results were kept with the checked-out implementation checkpoint [16]. Raw exam text, source books, database backups, credentials and detailed local runs are not in Git. Source and model hashes record the configuration. Public access to the release has not yet been checked. The study used public exam vignettes and developer-made synthetic cases; no patient records were used. Independent clinical review and a fresh held-out clinical evaluation are still pending."
+  },
+  {
+    "old": "8. Gargano MA, Matentzoglu N, Coleman B, Addo-Lartey EB, Anagnostopoulos AV, Anderton J, et al. The Human Phenotype Ontology in 2024: phenotypes around the world. Nucleic Acids Res. 2024;52(D1):D1333–D1346. doi:10.1093/nar/gkad1005.",
+    "new": "8. Gao T, Yen H, Yu J, Chen D. Enabling Large Language Models to Generate Text with Citations. Proc EMNLP. 2023:6465–6488. doi:10.18653/v1/2023.emnlp-main.398.\n9. Wadden D, Lin S, Lo K, Wang LL, van Zuylen M, Cohan A, et al. Fact or Fiction: Verifying Scientific Claims. Proc EMNLP. 2020:7534–7550. doi:10.18653/v1/2020.emnlp-main.609.\n10. Gargano MA, Matentzoglu N, Coleman B, Addo-Lartey EB, Anagnostopoulos AV, Anderton J, et al. The Human Phenotype Ontology in 2024: phenotypes around the world. Nucleic Acids Res. 2024;52(D1):D1333–D1346. doi:10.1093/nar/gkad1005."
+  },
+  {
+    "old": "9. Monarch Initiative. Mondo Disease Ontology [Internet]. [cited 2026 Oct 29]. https://mondo.monarchinitiative.org/",
+    "new": "11. Monarch Initiative. Mondo Disease Ontology [Internet]. [cited 2026 Oct 29]. https://mondo.monarchinitiative.org/"
+  },
+  {
+    "old": "10. Deka P. S-PubMedBert-MS-MARCO model card [Internet]. Hugging Face; [cited 2026 Oct 29]. https://huggingface.co/pritamdeka/S-PubMedBert-MS-MARCO",
+    "new": "12. Deka P. S-PubMedBert-MS-MARCO model card [Internet]. Hugging Face; [cited 2026 Oct 29]. https://huggingface.co/pritamdeka/S-PubMedBert-MS-MARCO"
+  },
+  {
+    "old": "11. Sentence Transformers. Cross-encoder/ms-marco-MiniLM-L6-v2 model card [Internet]. Hugging Face; [cited 2026 Oct 29]. https://huggingface.co/cross-encoder/ms-marco-MiniLM-L6-v2. Local revision: 233902d25c440f23af6f7d6e94d2946bac0bee0a.",
+    "new": "13. Sentence Transformers. Cross-encoder/ms-marco-MiniLM-L6-v2 model card [Internet]. Hugging Face; [cited 2026 Oct 29]. https://huggingface.co/cross-encoder/ms-marco-MiniLM-L6-v2. Local revision: 233902d25c440f23af6f7d6e94d2946bac0bee0a."
+  },
+  {
+    "old": "12. National Institute for Health and Care Excellence. Hypertension in adults: diagnosis and management. NICE guideline NG136. Recommendations [Internet]. 2019; updated 2026 Feb 26 [cited 2026 Oct 29]. https://www.nice.org.uk/guidance/ng136/chapter/Recommendations",
+    "new": "14. National Institute for Health and Care Excellence. Hypertension in adults: diagnosis and management. NICE guideline NG136. Recommendations [Internet]. 2019; updated 2026 Feb 26 [cited 2026 Oct 29]. https://www.nice.org.uk/guidance/ng136/chapter/Recommendations"
+  },
+  {
+    "old": "13. National Library of Medicine. Amlodipine besylate tablet. DailyMed [Internet]. Northwind Health Company, LLC; updated 2026 Jan 1 [cited 2026 Oct 29]. Set ID: 0c5784b9-5542-144f-e063-6394a90a7ebc. https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=0c5784b9-5542-144f-e063-6394a90a7ebc",
+    "new": "15. National Library of Medicine. Amlodipine besylate tablet. DailyMed [Internet]. Northwind Health Company, LLC; updated 2026 Jan 1 [cited 2026 Oct 29]. Set ID: 0c5784b9-5542-144f-e063-6394a90a7ebc. https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=0c5784b9-5542-144f-e063-6394a90a7ebc"
+  },
+  {
+    "old": "14. Mangarapu A. CDSS_SDC2 [software repository]. GitHub; 2026. Evaluated implementation and result documentation: commit 68e9b05. https://github.com/Arnavmangarapu/CDSS_SDC2/tree/68e9b05",
+    "new": "16. Mangarapu A. CDSS_SDC2 [software repository]. GitHub; 2026. Evaluated implementation and result documentation: commit 68e9b05. https://github.com/Arnavmangarapu/CDSS_SDC2/tree/68e9b05"
+  }
+]

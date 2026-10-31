@@ -7,6 +7,7 @@ from typing import Callable, Dict, Optional
 import requests
 
 from backend.config import settings
+from backend.services.telemetry import stage
 
 _response_schema = ContextVar("response_schema", default=None)
 
@@ -23,6 +24,7 @@ class LLMFallback:
     def __init__(self):
         self.last_provider: str | None = None
         self.last_model: str | None = None
+        self.last_response_metadata: dict = {}
         self.providers = (
             ("Gemini Flash Lite", settings.GEMINI_API_KEY, self._gemini_lite),
             ("Gemini Flash", settings.GEMINI_API_KEY, self._gemini_flash),
@@ -53,11 +55,14 @@ class LLMFallback:
         """Try configured providers until one returns valid, usable JSON."""
         self.last_provider = None
         self.last_model = None
+        self.last_response_metadata = {}
         for name, key, call in self.providers:
             if not key or not key.strip():
                 continue
             try:
-                content = call(key.strip(), prompt, system_instruction)
+                self.last_response_metadata = {}
+                with stage("model_call_wall"):
+                    content = call(key.strip(), prompt, system_instruction)
                 content = content.strip()
                 if content.startswith("```"):
                     content = content[3:]
@@ -82,6 +87,11 @@ class LLMFallback:
                 print(f"LLM fallback: {name} failed ({detail}); trying next provider")
         return None
 
+    def response_trace(self) -> dict:
+        """Requested alias and provider-returned identity are deliberately separate."""
+        return {"provider": self.last_provider, "model": self.last_model,
+                "requested_model": self.last_model, **self.last_response_metadata}
+
     @staticmethod
     def _post(url: str, headers: Dict, payload: Dict) -> Dict:
         response = requests.post(url, headers=headers, json=payload, timeout=(5, 35))
@@ -103,6 +113,13 @@ class LLMFallback:
                                         if _response_schema.get() is not None else {})},
             },
         )
+        self.last_response_metadata = {
+            "returned_model_version": data.get("modelVersion"),
+            "response_id": data.get("responseId"),
+            "usage_metadata": {key: value for key, value in data.get("usageMetadata", {}).items()
+                               if key.endswith("TokenCount") and isinstance(value, int)},
+            "finish_reasons": [item.get("finishReason") for item in data.get("candidates", [])],
+        }
         return "".join(part.get("text", "") for part in data["candidates"][0]["content"]["parts"]
                        if not part.get("thought", False))
 

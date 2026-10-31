@@ -1,0 +1,153 @@
+{
+  "clinical_validation": false,
+  "modes": {
+    "lexical": {
+      "attempted": 108,
+      "failed": 0,
+      "warning_precision": {
+        "numerator": 43,
+        "denominator": 85,
+        "value": 0.505882
+      },
+      "warning_recall": {
+        "numerator": 43,
+        "denominator": 72,
+        "value": 0.597222
+      },
+      "false_supported_fraction": {
+        "numerator": 22,
+        "denominator": 64,
+        "value": 0.34375
+      },
+      "false_support_rate_on_negative_opportunities": {
+        "numerator": 22,
+        "denominator": 168,
+        "value": 0.130952
+      },
+      "useful_supported_warning_recall": {
+        "numerator": 42,
+        "denominator": 48,
+        "value": 0.875
+      },
+      "supported_decision_coverage": {
+        "numerator": 64,
+        "denominator": 216,
+        "value": 0.296296
+      },
+      "unknown_allergy_abstention": {
+        "numerator": 1,
+        "denominator": 24,
+        "value": 0.041667
+      },
+      "exact_case_decisions": {
+        "numerator": 56,
+        "denominator": 108,
+        "value": 0.518519,
+        "wilson_95_descriptive": [
+          0.4253,
+          0.6105
+        ]
+      }
+    },
+    "deterministic": {
+      "attempted": 108,
+      "failed": 0,
+      "warning_precision": {
+        "numerator": 72,
+        "denominator": 72,
+        "value": 1.0
+      },
+      "warning_recall": {
+        "numerator": 72,
+        "denominator": 72,
+        "value": 1.0
+      },
+      "false_supported_fraction": {
+        "numerator": 0,
+        "denominator": 48,
+        "value": 0.0
+      },
+      "false_support_rate_on_negative_opportunities": {
+        "numerator": 0,
+        "denominator": 168,
+        "value": 0.0
+      },
+      "useful_supported_warning_recall": {
+        "numerator": 48,
+        "denominator": 48,
+        "value": 1.0
+      },
+      "supported_decision_coverage": {
+        "numerator": 48,
+        "denominator": 216,
+        "value": 0.222222
+      },
+      "unknown_allergy_abstention": {
+        "numerator": 24,
+        "denominator": 24,
+        "value": 1.0
+      },
+      "exact_case_decisions": {
+        "numerator": 108,
+        "denominator": 108,
+        "value": 1.0,
+        "wilson_95_descriptive": [
+          0.9657,
+          1.0
+        ]
+      }
+    },
+    "structured_oracle": {
+      "attempted": 108,
+      "failed": 0,
+      "warning_precision": {
+        "numerator": 72,
+        "denominator": 72,
+        "value": 1.0
+      },
+      "warning_recall": {
+        "numerator": 72,
+        "denominator": 72,
+        "value": 1.0
+      },
+      "false_supported_fraction": {
+        "numerator": 0,
+        "denominator": 48,
+        "value": 0.0
+      },
+      "false_support_rate_on_negative_opportunities": {
+        "numerator": 0,
+        "denominator": 168,
+        "value": 0.0
+      },
+      "useful_supported_warning_recall": {
+        "numerator": 48,
+        "denominator": 48,
+        "value": 1.0
+      },
+      "supported_decision_coverage": {
+        "numerator": 48,
+        "denominator": 216,
+        "value": 0.222222
+      },
+      "unknown_allergy_abstention": {
+        "numerator": 24,
+        "denominator": 24,
+        "value": 1.0
+      },
+      "exact_case_decisions": {
+        "numerator": 108,
+        "denominator": 108,
+        "value": 1.0,
+        "wilson_95_descriptive": [
+          0.9657,
+          1.0
+        ]
+      }
+    }
+  },
+  "scope": "Existing amlodipine label rules; structured_oracle is a component upper bound, not a fair raw-text competitor",
+  "uncertainty_note": "Warning events within cases/families are correlated; event fractions are descriptive and have no independent-event confidence interval.",
+  "evidence_role": "regression",
+  "label_status": "Developer-authored before execution; independent clinician review pending"
+}

@@ -19,6 +19,7 @@ from pathlib import Path
 from backend.schemas.retrieval import GraphRetrievalResult, OrchestratorResult, VectorRetrievalResult
 from evaluation.metrics import MODES, diagnostic_strata, review_id, score
 from ingestion.authoritative_sources import DEFAULT_MANIFEST, build_passages, load_manifest
+from backend.services.telemetry import capture_timings, stage, totals
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -76,11 +77,16 @@ class RetrievalAblation:
         self.mode = mode
 
     def retrieve(self, context):
+        from evaluation.controlled import strict_retrieval
         empty_graph = GraphRetrievalResult(candidate_diseases=[], paths=[])
         if self.mode == "llm_only":
             return OrchestratorResult(graph_results=empty_graph, vector_results=VectorRetrievalResult())
         vector_items = self.base.vector_retriever.retrieve(context)
+        if strict_retrieval() and getattr(self.base.vector_retriever, "last_error", None):
+            raise RuntimeError("Textbook retrieval failed; refusing degraded comparison")
         passages, limitations = self.base.vector_retriever.retrieve_authoritative(context)
+        if strict_retrieval() and limitations:
+            raise RuntimeError("Authoritative retrieval failed; refusing degraded comparison")
         graph = self.base.graph_retriever.retrieve(context) if self.mode == "graph_text" else empty_graph
         return OrchestratorResult(
             graph_results=graph, vector_results=VectorRetrievalResult(evidence_items=vector_items),
@@ -98,29 +104,41 @@ class FixedClarifier:
         return self.context.model_copy(deep=True)
 
 
-def live_records(cases: list[dict], max_retries: int) -> tuple[list[dict], float]:
+def live_records(cases: list[dict], max_retries: int, record_sink=None) -> tuple[list[dict], float]:
     from backend.agents.adaptive_retry import AdaptiveRetry
     from backend.api import routes
 
     initialized_at = time.perf_counter()
     base = routes.get_pipeline()
+    from evaluation.controlled import configure_pipeline, DailyQuotaReached
+    configure_pipeline(base)
     initialization_ms = round((time.perf_counter() - initialized_at) * 1000, 1)
     original_state = routes.pipeline_state
     records = []
+    def save(record):
+        records.append(record)
+        if record_sink:
+            record_sink(record)
     try:
         for index, case in enumerate(cases):
             started = time.perf_counter()
             try:
-                context = base["clarifier"].process(case["case_text"])
+                with capture_timings() as extraction_events:
+                    with stage("extraction"):
+                        context = base["clarifier"].process(case["case_text"])
                 clarification_ms = round((time.perf_counter() - started) * 1000, 1)
-                clarification_provider = {
-                    "provider": base["clarifier"].llm.last_provider,
-                    "model": base["clarifier"].llm.last_model,
-                }
+                clarification_provider = base["clarifier"].llm.response_trace()
+                from evaluation.controlled import require_model
+                require_model(base["clarifier"].llm)
             except Exception as exc:
+                if isinstance(exc, DailyQuotaReached):
+                    for mode in MODES:
+                        save({"case_id": case["case_id"], "mode": mode, "status": "error",
+                              "error_type": "DailyQuotaReached", "failed_stage": "shared_extraction"})
+                    raise
                 clarification_ms = round((time.perf_counter() - started) * 1000, 1)
                 for mode in MODES:
-                    records.append({"case_id": case["case_id"], "mode": mode,
+                    save({"case_id": case["case_id"], "mode": mode,
                                     "status": "error", "error_type": type(exc).__name__,
                                     "latency_ms": clarification_ms, "clarification_ms": clarification_ms})
                 continue
@@ -133,23 +151,30 @@ def live_records(cases: list[dict], max_retries: int) -> tuple[list[dict], float
                 routes.pipeline_state = services
                 started = time.perf_counter()
                 try:
-                    result = routes.analyze_case(routes.AnalyzeRequest(case_text=case["case_text"]))
+                    with capture_timings() as analysis_events:
+                        result = routes.analyze_case(routes.AnalyzeRequest(case_text=case["case_text"]))
+                    require_model(base["fusion"].llm)
                     analysis_ms = round((time.perf_counter() - started) * 1000, 1)
-                    records.append({
+                    save({
                         "case_id": case["case_id"], "mode": mode, "status": "ok",
                         "latency_ms": round(clarification_ms + analysis_ms, 1),
                         "clarification_ms": clarification_ms, "analysis_ms": analysis_ms,
                         "provider_trace": {
                             "clarifier": clarification_provider,
-                            "fusion": {"provider": base["fusion"].llm.last_provider,
-                                       "model": base["fusion"].llm.last_model},
+                            "fusion": base["fusion"].llm.response_trace(),
                         },
+                        "timings_ms": {"shared_extraction": totals(extraction_events),
+                                       "analysis": totals(analysis_events)},
                         "patient_context": result["patient_context"],
                         "retrieval": result["retrieval"], "report": result["report"],
                     })
                 except Exception as exc:
+                    if isinstance(exc, DailyQuotaReached):
+                        save({"case_id": case["case_id"], "mode": mode, "status": "error",
+                              "error_type": "DailyQuotaReached", "failed_stage": "analysis"})
+                        raise
                     analysis_ms = round((time.perf_counter() - started) * 1000, 1)
-                    records.append({"case_id": case["case_id"], "mode": mode,
+                    save({"case_id": case["case_id"], "mode": mode,
                                     "status": "error", "error_type": type(exc).__name__,
                                     "latency_ms": round(clarification_ms + analysis_ms, 1),
                                     "clarification_ms": clarification_ms, "analysis_ms": analysis_ms})
@@ -282,7 +307,12 @@ def main() -> None:
         records = read_jsonl(args.replay)
         initialization_ms = None
     else:
-        records, initialization_ms = live_records(cases, args.max_retries)
+        output.mkdir(parents=True)
+        checkpoint = output / "case_results.partial.jsonl"
+        def append_record(record):
+            with checkpoint.open("a", encoding="utf-8") as stream:
+                stream.write(json.dumps(record, ensure_ascii=False, default=str) + "\n")
+        records, initialization_ms = live_records(cases, args.max_retries, record_sink=append_record)
     validate_matrix(cases, records)
     adjudications = read_jsonl(args.adjudications) if args.adjudications else []
     if adjudications:
@@ -295,7 +325,7 @@ def main() -> None:
     packet, index = review_artifacts(cases, records, args.review_sample_size, seed=17)
     details = provenance(args.cases, dataset, cases, initialization_ms,
                          args.replay, args.adjudications, args.max_retries)
-    output.mkdir(parents=True)
+    output.mkdir(parents=True, exist_ok=not args.replay)
     (output / "run_manifest.json").write_text(json.dumps(details, indent=2, default=str) + "\n", encoding="utf-8")
     if dataset.get("reference_kind") == "medqa_exam_answer":
         reference_note = (
@@ -307,6 +337,7 @@ def main() -> None:
     else:
         reference_note = "Author-intended synthetic labels are not independently adjudicated; top-k is not clinical diagnostic accuracy"
     metric_payload = {
+        "metric_schema_version": "2.0-all-case-diagnosis",
         "clinical_validation": False,
         "dataset_origin": dataset["origin"],
         "diagnostic_reference_note": reference_note,
@@ -316,6 +347,8 @@ def main() -> None:
         "modes": metrics["modes"],
         "diagnostic_strata": diagnostic_strata(cases, records),
     }
+    from evaluation.paired_statistics import summarize as paired_summary
+    metric_payload["paired_diagnosis"] = paired_summary(cases, records)
     (output / "metrics.json").write_text(json.dumps(metric_payload, indent=2) + "\n", encoding="utf-8")
     write_jsonl(output / "case_results.jsonl", records)
     write_jsonl(output / "case_errors.jsonl", metrics["case_errors"])

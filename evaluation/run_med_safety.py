@@ -54,8 +54,9 @@ def extracted_context(case: dict) -> PatientContext:
     )
 
 
-def evaluate_case(case: dict, path: str, pinned: list, label_passages: list) -> dict:
-    context = structured_context(case) if path == "structured" else extracted_context(case)
+def evaluate_case(case: dict, path: str, pinned: list, label_passages: list,
+                  context_override=None) -> dict:
+    context = context_override or (structured_context(case) if path == "structured" else extracted_context(case))
     proposal = ClinicalClaim(
         claim_id="fixed_amlodipine_option", claim_type="treatment",
         text="Consider amlodipine for confirmed hypertension", status="unverified",

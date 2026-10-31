@@ -53,19 +53,19 @@ def diagnostic_strata(cases: list[dict], records: list[dict]) -> dict:
                     continue
                 complete += 1
                 accepted = {diagnosis_key(name) for name in case["reference_diagnosis_aliases"]}
-                predicted = [diagnosis_key(item.get("diagnosis", ""))
-                             for item in report.get("ranked_diagnoses", [])
-                             if item.get("diagnosis") and not item["diagnosis"].startswith("LLM synthesis unavailable")]
+                predicted = [diagnosis_key(item.get("diagnosis", "")) if not item.get("diagnosis", "").startswith("LLM synthesis unavailable") else ""
+                             for item in report.get("ranked_diagnoses", [])]
                 top1 += int(bool(predicted[:1] and predicted[0] in accepted))
                 top3 += int(any(name in accepted for name in predicted[:3]))
             strata[disease] = {
                 "attempted": len(selected), "complete": complete, "failed": len(selected) - complete,
-                "top1": {**fraction(top1, complete, "No completed cases"),
-                         "wilson_95": wilson_interval(top1, complete)},
-                "top3": {**fraction(top3, complete, "No completed cases"),
-                         "wilson_95": wilson_interval(top3, complete)},
+                "top1": {**fraction(top1, len(selected), "No planned cases"),
+                         "wilson_95": wilson_interval(top1, len(selected))},
+                "top3": {**fraction(top3, len(selected), "No planned cases"),
+                         "wilson_95": wilson_interval(top3, len(selected))},
+                "completed_only_top1": fraction(top1, complete, "No completed cases"),
             }
-        complete_strata = [row for row in strata.values() if row["complete"]]
+        complete_strata = [row for row in strata.values() if row["attempted"]]
         macro_available = len(complete_strata) == len(diseases)
         output[mode] = {
             "diseases": strata,
@@ -138,12 +138,21 @@ def provider_consistency(cases: list[dict], records: list[dict]) -> dict:
     for record in records:
         by_case[record.get("case_id")].append(record)
     matched, mismatched, unknown = [], [], []
+    version_matched, version_mismatched, version_unknown = [], [], []
     for case in cases:
         case_id = case["case_id"]
         rows = by_case[case_id]
         if len(rows) != len(MODES) or any(row.get("status") != "ok" for row in rows):
             unknown.append(case_id)
+            version_unknown.append(case_id)
             continue
+        versions = [row.get("provider_trace", {}).get("fusion", {}).get("returned_model_version") for row in rows]
+        if any(not version for version in versions):
+            version_unknown.append(case_id)
+        elif len(set(versions)) == 1:
+            version_matched.append(case_id)
+        else:
+            version_mismatched.append(case_id)
         providers = [(row.get("provider_trace", {}).get("fusion", {}).get("provider"),
                       row.get("provider_trace", {}).get("fusion", {}).get("model")) for row in rows]
         if any(provider is None or model is None for provider, model in providers):
@@ -154,7 +163,10 @@ def provider_consistency(cases: list[dict], records: list[dict]) -> dict:
             mismatched.append(case_id)
     return {"matched_case_ids": matched, "mismatched_case_ids": mismatched,
             "unknown_case_ids": unknown,
-            "interpretation": "Retrieval effects are confounded when synthesis providers differ across modes"}
+            "returned_version_matched_case_ids": version_matched,
+            "returned_version_mismatched_case_ids": version_mismatched,
+            "returned_version_unknown_case_ids": version_unknown,
+            "interpretation": "Retrieval effects are confounded when synthesis providers or returned versions differ across modes; matching requested aliases do not establish matching versions"}
 
 
 def score(cases: list[dict], records: list[dict], pinned: list[SourcePassage],
@@ -190,9 +202,8 @@ def score(cases: list[dict], records: list[dict], pinned: list[SourcePassage],
             report = record["report"]
             case_errors = []
             aliases = {diagnosis_key(name) for name in case["reference_diagnosis_aliases"]}
-            predicted = [diagnosis_key(item.get("diagnosis", ""))
-                         for item in report.get("ranked_diagnoses", [])
-                         if not item.get("diagnosis", "").startswith("LLM synthesis unavailable")]
+            predicted = [diagnosis_key(item.get("diagnosis", "")) if not item.get("diagnosis", "").startswith("LLM synthesis unavailable") else ""
+                         for item in report.get("ranked_diagnoses", [])]
             diagnosis_total += 1
             if predicted[:1] and predicted[0] in aliases:
                 top1 += 1
@@ -273,8 +284,11 @@ def score(cases: list[dict], records: list[dict], pinned: list[SourcePassage],
         results[mode] = {
             "case_count": len(selected), "successful_cases": successful,
             "failed_cases": len(selected) - successful,
-            "diagnostic_top1": fraction(top1, diagnosis_total, "No successful cases with reference diagnoses"),
-            "diagnostic_top3": fraction(top3, diagnosis_total, "No successful cases with reference diagnoses"),
+            "diagnostic_top1": fraction(top1, len(cases), "No planned cases"),
+            "diagnostic_top3": fraction(top3, len(cases), "No planned cases"),
+            "completed_only_diagnostic_top1": fraction(top1, diagnosis_total, "No successful cases"),
+            "completed_only_diagnostic_top3": fraction(top3, diagnosis_total, "No successful cases"),
+            "diagnosis_denominator_policy": "All planned cases, including failures; completed-only metrics are secondary",
             "citation_validity": fraction(citation_valid, citation_total, "No citation IDs emitted"),
             "claim_support_accuracy": fraction(support_correct, support_decided,
                                                "Requires adjudicated supported/conflicting claims"),

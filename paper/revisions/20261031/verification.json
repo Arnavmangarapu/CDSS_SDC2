@@ -1,0 +1,17 @@
+{
+  "author_and_result_tables_unchanged": true,
+  "sections": 15,
+  "column_configurations_preserved": true,
+  "full_width_result_tables": 5,
+  "images": 1,
+  "humanized_passages": 9,
+  "declarations": "Deferred at user request",
+  "removed_forced_page_breaks": [
+    "Table 1",
+    "Table 2",
+    "5.3"
+  ],
+  "rendered_page_count": 8,
+  "all_pages_visually_inspected": true,
+  "layout_check": "No clipped text, overlapping content, split result tables or missing figures observed"
+}

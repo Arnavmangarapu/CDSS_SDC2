@@ -1,6 +1,6 @@
 # Research revision plan
 
-Prepared 31 October 2026. Planning and read-only audit only: no implementation, database, manuscript, or live Google Doc changes were made for this assessment. The calculations below use existing saved outputs, not new inference.
+Prepared 31 October 2026 as a planning and read-only assessment. Implementation was subsequently authorized and is documented in `paper/IMPLEMENTATION_STATUS_20261031.md`. The original audit below is retained for context; its diagnosis calculations use saved outputs, not new inference.
 
 ## Decision
 

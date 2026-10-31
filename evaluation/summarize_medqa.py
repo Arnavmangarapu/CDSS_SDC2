@@ -39,20 +39,19 @@ def summarize(cases_path: Path, run_dir: Path) -> dict:
                 if record.get("status") != "ok" or not isinstance(record.get("report"), dict):
                     continue
                 complete += 1
-                predicted = [diagnosis_key(item.get("diagnosis", ""))
-                             for item in record["report"].get("ranked_diagnoses", [])
-                             if item.get("diagnosis") and not item["diagnosis"].startswith("LLM synthesis unavailable")]
-                empty_ranked += int(not predicted)
+                predicted = [diagnosis_key(item.get("diagnosis", "")) if not item.get("diagnosis", "").startswith("LLM synthesis unavailable") else ""
+                             for item in record["report"].get("ranked_diagnoses", [])]
+                empty_ranked += int(not any(predicted))
                 key = diagnosis_key(case["reference_diagnosis_aliases"][0])
                 top1 += int(bool(predicted[:1] and predicted[0] == key))
                 top3 += int(key in predicted[:3])
             steps[step] = {
                 "attempted": len(selected), "complete": complete,
                 "failed": len(selected) - complete, "completed_without_ranked_diagnosis": empty_ranked,
-                "top1": {**fraction(top1, complete, "No completed cases"),
-                         "wilson_95": wilson_interval(top1, complete)},
-                "top3": {**fraction(top3, complete, "No completed cases"),
-                         "wilson_95": wilson_interval(top3, complete)},
+                "top1": {**fraction(top1, len(selected), "No planned cases"),
+                         "wilson_95": wilson_interval(top1, len(selected))},
+                "top3": {**fraction(top3, len(selected), "No planned cases"),
+                         "wilson_95": wilson_interval(top3, len(selected))},
             }
         mode_rows = [row for row in records if row["mode"] == mode]
         provider_counts = Counter(

@@ -7,7 +7,7 @@ from pathlib import Path
 
 from backend.config import settings
 
-ENCODER = 'pritamdeka/S-PubMedBert-MS-MARCO'
+ENCODER = settings.VECTOR_EMBEDDER_MODEL
 TEXTBOOKS = Path(__file__).resolve().parents[1] / 'datasets/literature/MedQA/MedQA-USMLE/textbooks/en'
 
 
@@ -48,7 +48,8 @@ def main():
     client=QdrantClient(settings.QDRANT_URL, timeout=60)
     if client.collection_exists(args.collection):parser.error('Collection exists; use a new name. Existing collections are never deleted.')
     torch.set_num_threads(4)
-    model=SentenceTransformer(ENCODER, device='cpu', local_files_only=True)
+    model=SentenceTransformer(ENCODER, revision=settings.VECTOR_EMBEDDER_REVISION,
+                              device='cpu', local_files_only=True)
     client.create_collection(args.collection, vectors_config=VectorParams(size=768,distance=Distance.COSINE))
     for offset in range(0,len(chunks),32):
         batch=chunks[offset:offset+32]
@@ -59,7 +60,8 @@ def main():
     actual=client.count(args.collection,exact=True).count
     if actual!=len(chunks):raise RuntimeError('Indexed count does not match source chunks')
     args.manifest.parent.mkdir(parents=True,exist_ok=True)
-    args.manifest.write_text(json.dumps({'collection':args.collection,'encoder':ENCODER,'points':actual,
+    args.manifest.write_text(json.dumps({'collection':args.collection,'encoder':ENCODER,
+        'encoder_revision':settings.VECTOR_EMBEDDER_REVISION,'points':actual,
         'files':{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in paths},
         'character_cap':None,'chunk_size_words':150,'overlap_words':20,'exam_questions_indexed':False},indent=2)+'\n')
 

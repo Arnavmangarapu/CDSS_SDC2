@@ -1,4 +1,4 @@
-"""Download the explicit reranker into the ignored local model cache."""
+"""Download commit-pinned models; no indexing or database writes."""
 from pathlib import Path
 from huggingface_hub import snapshot_download
 from backend.config import settings
@@ -9,6 +9,10 @@ def main():
         revision=settings.VECTOR_RERANKER_REVISION,
         cache_dir=Path(__file__).resolve().parents[1] / 'datasets/models',
         allow_patterns=['*.json', '*.txt', 'model.safetensors'])
+    print(path)
+    path = snapshot_download(repo_id=settings.VECTOR_EMBEDDER_MODEL,
+        revision=settings.VECTOR_EMBEDDER_REVISION,
+        allow_patterns=['*.json', '*.txt', '*.safetensors', '*.bin'])
     print(path)
 
 

@@ -1,5 +1,14 @@
 # Step 8 evaluation
 
+## Independent evaluation implementation
+
+See [the new protocol and commands](INDEPENDENT_EVALUATION_PROTOCOL.md) for tracked controlled runs,
+exposure exclusions, version freezes, safety/retrieval baselines and blinded clinical review.
+Independent authors and clinical reviewers are currently unavailable. Existing repaired results are
+development/regression evidence. New primary diagnosis metrics include all planned cases; failed and
+empty outputs count incorrect. Completed-output-only metrics are explicitly secondary; old saved
+artifacts remain unchanged. Manuscript declarations await author facts.
+
 ## Frozen three-dataset exam-QA benchmark (incomplete)
 
 The [QA protocol](QA_BENCHMARK_PROTOCOL.md) freezes 50 questions each from MedQA,

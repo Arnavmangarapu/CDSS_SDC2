@@ -1,0 +1,12 @@
+[
+  {
+    "i": 0,
+    "from": "The repairs made restored the candidate retrieval function and corrected the extraction failures that had been observed, but they did not demonstrate any diagnostic benefit from the graph.",
+    "to": "The repairs restored candidate retrieval and corrected observed extraction failures, without demonstrating a diagnostic benefit from the graph."
+  },
+  {
+    "i": 5,
+    "from": "The lexical comparator does not pay attention to negation or medication timing; its lower score does not prove that an LLM is better.",
+    "to": "The lexical comparator ignores negation and medication timing; its lower score does not prove an LLM benefit."
+  }
+]

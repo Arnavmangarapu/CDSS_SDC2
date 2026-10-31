@@ -33,6 +33,7 @@ from backend.agents.confidence import ConfidenceEvaluator
 from backend.agents.adaptive_retry import AdaptiveRetry
 from backend.agents.report import ReportGenerator
 from backend.services.claim_verifier import ClaimVerifier
+from backend.services.telemetry import stage
 
 # Global state for lazy initialization
 pipeline_state = {}
@@ -89,7 +90,8 @@ def analyze_case(request: AnalyzeRequest):
     report_generator = services['report']
     
     # 1. Clarify
-    context = clarifier.process(request.case_text)
+    with stage("extraction"):
+        context = clarifier.process(request.case_text)
     
     attempt = 0
     action = "retry"
@@ -98,24 +100,28 @@ def analyze_case(request: AnalyzeRequest):
         print(f"--- Analysis Attempt {attempt + 1} ---")
         
         # 2. Retrieve
-        retrieval_results = orchestrator.retrieve(context)
+        with stage("retrieval"):
+            retrieval_results = orchestrator.retrieve(context)
         
         # 3. Rank Evidence
-        ranked_evidence = ranker.rank(context, retrieval_results)
+        with stage("evidence_ranking"):
+            ranked_evidence = ranker.rank(context, retrieval_results)
         
         # 4. Detect Conflicts
         conflicts = detector.detect(context, retrieval_results, ranked_evidence)
         
         # 5. Clinical Fusion
-        fusion_result = fusion.fuse(context, retrieval_results, ranked_evidence, conflicts)
+        with stage("synthesis"):
+            fusion_result = fusion.fuse(context, retrieval_results, ranked_evidence, conflicts)
         diagnoses = fusion_result.diagnoses
         missing_info = list(dict.fromkeys(context.missing_information + fusion_result.missing_information))
 
         # 6. Independently verify citations and apply label-backed safety rules.
-        verification = verifier.verify(context, fusion_result.claims, retrieval_results.source_passages)
-        safety_conflicts, safety_claims = detector.detect_medication_safety(
-            context, verification.trusted_passages, verification.claims
-        ) if hasattr(detector, 'detect_medication_safety') else ([], [])
+        with stage("verification_and_safety"):
+            verification = verifier.verify(context, fusion_result.claims, retrieval_results.source_passages)
+            safety_conflicts, safety_claims = detector.detect_medication_safety(
+                context, verification.trusted_passages, verification.claims
+            ) if hasattr(detector, 'detect_medication_safety') else ([], [])
         conflicts.extend(safety_conflicts)
         verification.claims.extend(safety_claims)
         verification.evidence_completeness['supported_claims'] = sum(

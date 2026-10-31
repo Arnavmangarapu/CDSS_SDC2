@@ -1,0 +1,57 @@
+{
+  "status": "complete",
+  "collections": {
+    "medical_textbooks_v2": {
+      "point_count": 1134,
+      "dimensions": {
+        "default": 768
+      },
+      "payload_vector_sha256": "64fd2d8538c71b15faca5f6332f062371d24eab9824d3001a16318512338725c",
+      "leakage_findings": []
+    },
+    "clinical_guidelines": {
+      "point_count": 17,
+      "dimensions": {
+        "default": 768
+      },
+      "payload_vector_sha256": "03560b35073257626cf64da06b38f2eb44e7e36b023d3a37ad9125cf2d6eb4f4",
+      "leakage_findings": []
+    },
+    "clinical_drug_labels": {
+      "point_count": 9,
+      "dimensions": {
+        "default": 768
+      },
+      "payload_vector_sha256": "6bf1733b02b43927284fde865f7d011e13eb764016f68092c49ba40a59ba017d",
+      "leakage_findings": []
+    }
+  },
+  "graph": {
+    "clinical_nodes": 19410,
+    "relationships": [
+      {
+        "relation": "DRUG_CONTRAINDICATED_FOR",
+        "n": 30675
+      },
+      {
+        "relation": "DRUG_INDICATED_FOR",
+        "n": 9388
+      },
+      {
+        "relation": "PHENOTYPE_ABSENT_IN_DISEASE",
+        "n": 1193
+      },
+      {
+        "relation": "PHENOTYPE_SUPPORTS_DISEASE",
+        "n": 150317
+      }
+    ]
+  },
+  "clear_of_detected_qa_leakage": true,
+  "dimensions_match_768": true,
+  "limitations": [
+    "Exact long-stem and structured-QA-key checks only; partial/paraphrase leakage and model pretraining are not certified absent",
+    "Qdrant fingerprints include stored vectors and payloads; graph snapshot records inventory counts, not every edge"
+  ],
+  "cases_sha256": "ef0304e8d907099a7441571a09370eb0ddb4e1a1db93d63e844db595cc8a8a45"
+}
