@@ -4,6 +4,8 @@ This document describes the implementation on the `claim-verification` branch. I
 
 For one consolidated figure spanning the runtime, ingestion, trust boundary, and evaluation, see [the detailed architecture diagram](ARCHITECTURE_DIAGRAM.md).
 
+For an end-to-end explanation in simple English, see the [documentation index](docs/README.md), [current code map](docs/02_ARCHITECTURE_AND_CODE_MAP.md), and [current ingestion/retrieval guide](docs/04_DATA_INGESTION_AND_RETRIEVAL.md). The numbered guides distinguish current implementation details from the dated experiments below.
+
 ## 1. System view
 
 ```mermaid
@@ -117,7 +119,7 @@ flowchart LR
     Official --> API
 ```
 
-The Neo4j importer reads a local `datasets/kg.csv` and defaults to 50,000 rows. The textbook importer currently reads one MedQA English textbook and indexes its first 150,000 characters. The authoritative importer checks source checksums before replacing its dedicated collections. `datasets/DATASET_GUIDE.md` lists required local paths and what is excluded from this public code repository. No real patient record or private API key should be committed.
+The current Neo4j importer streams the full configured CSV and imports selected positive/negative phenotype–disease, drug contraindication, and drug indication relations into the `ClinicalEntity` schema, keyed by global PrimeKG node index. The textbook importer reads complete First Aid and Pathoma files by default, chunks them into 150 words with 20-word overlap, and refuses to overwrite an existing collection. Textbook retrieval requests at least 20 dense candidates and optionally reranks to five; authoritative hits are merged by relevance rather than source type. The authoritative importer checks source checksums before replacing its dedicated collections. [datasets/DATASET_GUIDE.md](datasets/DATASET_GUIDE.md) lists required local paths and what is excluded from this source repository. No real patient record or private API key should be committed.
 
 ## 5. Evaluation architecture and interpretation
 
@@ -125,4 +127,4 @@ The Neo4j importer reads a local `datasets/kg.csv` and defaults to 50,000 rows. 
 
 Exact alias top-k scores from the 2026-10-07 run were 1/6, 4/6, and 5/6. Those figures measure recognition of diagnoses already written in synthetic cases. Two cases used different synthesis providers across arms and one had unknown provider selection, so the comparison does not isolate retrieval effects. Pinned citation validity checks source identity; claim support accuracy and unsafe-option rate cannot be reported without independent clinician adjudication. See [evaluation/README.md](evaluation/README.md) for denominators and [SAMPLE_CASES.md](SAMPLE_CASES.md) for observed failures.
 
-For publication, the implemented contribution is **traceable, conditional candidate presentation with explicit abstention in a narrow source domain**. Clinical accuracy, safe medicine recommendation, and patient benefit require stronger external validation and should not be inferred from this architecture or its synthetic fixtures.
+For publication, the implemented contribution is **traceable, conditional candidate presentation with explicit abstention in a narrow source domain**. Clinical accuracy, safe medicine recommendation, and patient benefit require stronger external validation and should not be inferred from this architecture or its synthetic fixtures. For later development runs and their limits, see the [dated results guide](docs/08_TESTING_EVALUATION_AND_RESULTS.md).
