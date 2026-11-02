@@ -2,6 +2,8 @@
 
 This diagram maps the implemented `/analyze` path, the two evidence trust levels, local data ingestion, and the synthetic evaluation harness. It represents the current research prototype; it does not imply clinical validation.
 
+For a smaller architecture view and a complete file map, see the [simple-English architecture guide](docs/02_ARCHITECTURE_AND_CODE_MAP.md). Retrieval branches execute sequentially. Optional Serper results are collected separately; their snippet text is not currently added to the ranker or fusion prompt.
+
 ```mermaid
 flowchart TB
     subgraph Interface["A. Interface and API"]
@@ -34,7 +36,7 @@ flowchart TB
         GraphR --> Leads["Candidate signals: not verified citations"]
         TextR --> Leads
         DrugR --> Leads
-        SearchR --> Leads
+        SearchR --> Discovery["Collected discovery results: not added to current fusion prompt"]
         AuthorityR --> Passages["SourcePassage IDs + dated sections"]
     end
 
@@ -105,7 +107,7 @@ flowchart TB
 ## Reading the diagram
 
 1. **Solid arrows** show request data or local ingestion. **Dotted arrows** show external model calls, evaluation substitution, or the optional retry loop. The evaluation runner invokes the existing route function directly; it does not create a second production API.
-2. **Candidate signals** from the graph, textbook retrieval, DrugCentral, and Serper can influence proposals but cannot make a claim `supported`. Only pinned `SourcePassage` records are eligible for citation. Their IDs and full passage data must match the manifest-backed local snapshot.
+2. **Candidate signals** from the graph, textbook retrieval, and DrugCentral can influence proposals but cannot make a claim `supported`. Serper results are collected separately and their snippets are not currently included in fusion. Only pinned `SourcePassage` records are eligible for verified citation. Their IDs and full passage data must match the manifest-backed local snapshot.
 3. **The independent gate** leaves general diagnostic, investigation, and treatment proposals `unverified` when semantic support or patient applicability cannot be established. Explicit, narrow amlodipine safety rules can create a source-backed warning or a conflicting treatment claim. An absent source or unknown patient fact leads to a gap or abstention.
 4. **The confidence value** controls retries and is not a calibrated probability. The UI presents statuses and missing checks; clinicians must assess the report and sources. Raw case text is sent to configured LLM providers, so the local prototype should be demonstrated with synthetic or appropriately de-identified inputs.
 

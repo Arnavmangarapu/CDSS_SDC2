@@ -1,14 +1,22 @@
 # Evidence-linked Graph-RAG clinical decision support prototype
 
+> **Documentation-only publication:** These guides describe the inspected local implementation checkpoint `a3a3412` (2 November 2026). This branch adds documentation only; eight earlier local implementation/research commits are not included. Files available in the older GitHub baseline can differ from that checkpoint. References to unpublished checkpoint files are shown as code paths rather than broken links.
+
 A clinician-facing **research prototype** that turns a free-text case into a differential, conditional investigations and treatment options, medication-safety findings, and claim-level source links. It combines a biomedical knowledge graph, text retrieval, and a small pinned set of guideline and drug-label passages. Its current authoritative-source scope is **adult hypertension and one amlodipine label**. It is not validated for diagnosis, prescribing, clinical safety, or patient use.
 
 The contribution being tested is an **evidence-linked claim workflow**: the model proposes claims, while a separate verifier checks source identity and narrow applicability rules. A linked source is not, by itself, proof that a clinical claim is true or appropriate for a patient. Most generated claims remain `unverified`; the only automatically supported findings are narrow, rule-checked warnings from the pinned amlodipine label.
+
+## Detailed documentation in simple English
+
+Start with the [complete documentation index](docs/README.md). The numbered guides cover the [project overview](docs/01_PROJECT_OVERVIEW.md), [architecture and code map](docs/02_ARCHITECTURE_AND_CODE_MAP.md), [end-to-end request flow](docs/03_END_TO_END_REQUEST_FLOW.md), [data and retrieval](docs/04_DATA_INGESTION_AND_RETRIEVAL.md), [verification and safety](docs/05_CLAIMS_VERIFICATION_AND_SAFETY.md), [setup and troubleshooting](docs/06_SETUP_CONFIGURATION_AND_OPERATIONS.md), [API and frontend](docs/07_API_AND_FRONTEND.md), [testing and dated results](docs/08_TESTING_EVALUATION_AND_RESULTS.md), and [limitations and future work](docs/09_LIMITATIONS_AND_FUTURE_WORK.md).
+
+For presentations and project reviews, use the [180 interview/review questions with answers](docs/10_INTERVIEW_AND_REVIEW_QUESTIONS.md) and the [demo and explanation guide](docs/11_DEMO_AND_EXPLANATION_GUIDE.md). These guides describe the inspected implementation as of 2 November 2026 and distinguish it from historical results and proposed research.
 
 ## What the project contains
 
 - A FastAPI endpoint (`POST /analyze`) and a browser interface (`/ui`) for clinician review.
 - Extraction of stated patient facts and missing information, including allergy status, current medicines, blood pressure, selected labs, pregnancy status, and known hypertension.
-- Retrieval from Neo4j graph relations, Qdrant textbook passages, and separately indexed versioned NICE and DailyMed passages. DrugCentral associations and optional Serper snippets contribute candidate signals, not verified citations.
+- Retrieval from Neo4j graph relations, Qdrant textbook passages, and separately indexed versioned NICE and DailyMed passages. DrugCentral associations contribute candidate signals; optional Serper snippets are collected separately and are not currently added to the fusion prompt. Neither provides verified citations.
 - Typed diagnosis, investigation, treatment, and medication-warning claims with `supported`, `conflicting`, or `unverified` status, source IDs, conditions, and missing checks.
 - A six-case synthetic safety/boundary evaluation, a separate 12-case four-condition diagnostic pilot, and a checksum-locked 36-vignette MedQA exam pilot comparing LLM-only, text-RAG, and graph-plus-text modes. Separate frozen challenges test 108 developer-labeled amlodipine scenarios and 132 constructed provenance corruptions.
 
