@@ -18,4 +18,5 @@ def test_analyze_endpoint():
     data = response.json()
     assert "patient_context" in data
     assert "report" in data
-    assert "Myocardial Infarction" in data["report"]["ranked_diagnoses"][0]["diagnosis"]
+    diagnosis = data["report"]["ranked_diagnoses"][0]["diagnosis"]
+    assert "myocardial infarction" in diagnosis.casefold()

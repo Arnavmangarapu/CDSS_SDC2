@@ -18,7 +18,7 @@ source .venv-linux/bin/activate
 python -m pip install -r requirements.txt
 ```
 
-On Windows PowerShell, run `python -m venv .venv` then `.\.venv\Scripts\python.exe -m pip install -r requirements.txt`. Use `.\.venv\Scripts\python.exe` in place of `python` below, or activate with `.\.venv\Scripts\Activate.ps1`. Keep separate environments when Windows and WSL share one checkout. Paths under `/mnt/d` belong to WSL. Repository access must be available to your Git account.
+On Windows PowerShell, run `python -m venv .venv` then `.\.venv\Scripts\python.exe -m pip install -r requirements.txt`. Use `.\.venv\Scripts\python.exe` in place of `python` below, or activate with `.\.venv\Scripts\Activate.ps1`. Keep separate environments when Windows and WSL share one checkout. Paths under `/mnt/d` belong to WSL. If your checkout is on a Windows drive, create the WSL virtual environment on the Linux filesystem (for example, `python3 -m venv ~/.venvs/cdss`) to avoid slow imports through the mount. Repository access must be available to your Git account.
 
 In the supplied local workspace, change into the nested `code/` folder before running project commands. The parent workspace is not the Git repository.
 
