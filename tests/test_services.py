@@ -41,3 +41,29 @@ def test_clarifier():
     assert len(context.symptoms) == 1
     assert context.symptoms[0].text == "chest pain"
     assert context.symptoms[0].normalized_name == "Chest Pain"
+
+
+
+def test_graph_connection_failure_does_not_discard_textbook_results():
+    from unittest.mock import Mock
+
+    from neo4j.exceptions import ServiceUnavailable
+
+    from backend.schemas.patient import PatientContext
+    from backend.services.orchestrator import RetrievalOrchestrator
+
+    graph = Mock()
+    graph.retrieve.side_effect = ServiceUnavailable("Connection refused")
+    vector = Mock(last_error=None)
+    vector.retrieve.return_value = [{"text": "A textbook passage"}]
+    vector.retrieve_authoritative.return_value = ([], [])
+    web = Mock()
+    web.search.return_value = []
+
+    result = RetrievalOrchestrator(graph, vector, Mock(), web).retrieve(
+        PatientContext(raw_input="A synthetic case")
+    )
+
+    assert result.graph_results.candidate_diseases == []
+    assert any("Neo4j graph retrieval is unavailable" in item for item in result.graph_results.limitations)
+    assert result.vector_results.evidence_items == [{"text": "A textbook passage"}]

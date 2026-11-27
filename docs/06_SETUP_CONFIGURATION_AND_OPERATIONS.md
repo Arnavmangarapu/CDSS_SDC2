@@ -6,19 +6,19 @@
 
 The repository contains source code, manifests, synthetic fixtures, and selected aggregate results. It does not contain populated databases, cached models, large biomedical files, API keys, or raw publisher snapshots. Installing Python packages is only the first part of setup.
 
-The checked development environment uses Python 3.14. The dependency list is not pinned, so compatibility with a different Python/package combination must be checked rather than assumed. Docker is needed for the supplied database helpers; it is not used to containerize the whole application.
+The checked development environment uses Python 3.14. The dependency list is not pinned, so compatibility with a different Python/package combination must be checked rather than assumed. Docker is needed for the Compose database services; it is not used to containerize the whole application.
 
 ## 2. Clone the implementation branch
 
 ```bash
-git clone --branch claim-verification https://github.com/Arnavmangarapu/CDSS_SDC2.git
+git clone --branch fix/windows-linux-runtime https://github.com/Arnavmangarapu/CDSS_SDC2.git
 cd CDSS_SDC2
-python3 -m venv .venv
-source .venv/bin/activate
+python3 -m venv .venv-linux
+source .venv-linux/bin/activate
 python -m pip install -r requirements.txt
 ```
 
-For PowerShell, activate with `.\.venv\Scripts\Activate.ps1`; Bash helper scripts need Bash/WSL or equivalent manual Docker commands. Repository access must be available to your Git account.
+On Windows PowerShell, run `python -m venv .venv` then `.\.venv\Scripts\python.exe -m pip install -r requirements.txt`. Use `.\.venv\Scripts\python.exe` in place of `python` below, or activate with `.\.venv\Scripts\Activate.ps1`. Keep separate environments when Windows and WSL share one checkout. Paths under `/mnt/d` belong to WSL. Repository access must be available to your Git account.
 
 In the supplied local workspace, change into the nested `code/` folder before running project commands. The parent workspace is not the Git repository.
 
@@ -29,6 +29,8 @@ For a new checkout without an existing `.env`:
 ```bash
 cp .env.example .env
 ```
+
+In PowerShell, use `Copy-Item .env.example .env`.
 
 If `.env` already exists, edit it without replacing its keys. [Settings](../backend/config.py) loads the repository-root `.env`; `.gitignore` excludes it. Keep keys out of documentation and commits.
 
@@ -54,11 +56,9 @@ The helper password is a local development default. Changing it in `.env` does n
 
 The configured fallback order is Gemini Flash Lite, Gemini Flash, Cohere, Mistral, then OpenRouter. The actual model identifiers are defined in [llm_fallback.py](../backend/services/llm_fallback.py). They are code defaults, not a promise that a provider still offers the alias or grants the account access.
 
-### Data path settings and a current caveat
+### Data paths
 
-Settings include `DATASETS_DIR`, `HPO_PATH`, `MONDO_PATH`, `KG_PATH`, `DRUGCENTRAL_DIR`, and dataset-specific literature paths. Some ingestion/evaluation tools read them.
-
-However, `get_pipeline()` currently constructs HPO, MONDO, KG-constructor, and DrugCentral paths directly under the repository's `datasets/` directory. The textbook importer also uses its fixed repository-relative textbook directory. Editing a path setting alone does not relocate every runtime input. Keep the expected layout unless you also update and verify the code path that reads it.
+The app reads `HPO_PATH`, `MONDO_PATH`, and `DRUGCENTRAL_DIR` from the repository’s `.env`. The graph importer reads `KG_PATH`, and the textbook importer looks under `MEDQA_DIR/MedQA-USMLE/textbooks/en`. Relative values start at the repository root. Use forward-slash relative paths for a checkout shared by Windows and WSL. If files are outside the repository, use native absolute paths in each environment. Keep the pinned authoritative snapshots at the paths in their source manifest.
 
 `VECTOR_COLLECTION_PUBMEDQA` and `VECTOR_COLLECTION_MEDQA` exist in settings but are not queried by the current `VectorRetriever` analysis path.
 
@@ -70,14 +70,13 @@ Do not place exam questions or answer explanations in the textbook input directo
 
 ## 5. Start database services
 
-For a fresh machine without the helper containers:
+For a fresh setup, start Docker Desktop or Docker Engine, then run this from the repository root in PowerShell or a Linux shell:
 
 ```bash
-./run_neo4j.sh
-./run_qdrant.sh
+docker compose up -d
 ```
 
-These run `neo4j:5.18.0` and the untagged `qdrant/qdrant` image, with named data volumes. The Qdrant image is not pinned by the script. Both helpers publish development ports without explicit localhost-only bindings.
+Compose uses named data volumes and publishes the database ports on localhost. For a WSL app, run the services in the same environment or configure `NEO4J_URI` and `QDRANT_URL` with addresses reachable from WSL. The volumes persist when you use `docker compose stop`.
 
 If those exact containers already exist and are stopped:
 
@@ -90,7 +89,7 @@ Use `docker ps -a` to identify your actual containers first. The historical loca
 
 ## 6. Prepare models and build indexes
 
-Use fresh manifest/output paths. Preserve existing stores before changing them.
+Use fresh manifest/output paths. Preserve existing stores before changing them. Run preparation in each operating system you use, since Hugging Face uses its local cache under that OS's user account.
 
 ```bash
 python -m ingestion.prepare_models
@@ -130,13 +129,13 @@ python -m backend.main
 
 Open `http://localhost:8000/ui/`. The default FastAPI interactive schema is at `http://localhost:8000/docs`, and its OpenAPI JSON is at `/openapi.json`.
 
-`python -m backend.main` enables reload and binds `0.0.0.0:8000`. For a local development session with an explicit loopback binding, use:
+`python -m backend.main` listens at `127.0.0.1:8000`. To enable reload while editing locally, use:
 
 ```bash
-python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
+python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-The static frontend mount uses a relative `frontend` directory, so launch from the repository root. The first analysis can be slower because services initialize lazily.
+Run from the repository root so Python can find the `backend` module. The first analysis can be slower because services initialize lazily.
 
 ## 8. Verify readiness in layers
 
@@ -169,7 +168,7 @@ Inspect missing BP, renal function, potassium, and other unresolved facts rather
 | Symptom | Likely reason and useful check |
 | --- | --- |
 | “Not a git repository” in the supplied workspace | Enter the nested `code/` directory |
-| StaticFiles directory error | Start from the repository root containing `frontend/` |
+| `No module named backend` | Run the launch command from the repository root |
 | Docker container name exists | Inspect/start the existing container instead of rerunning `docker run` |
 | Database port already used | Identify the current service; avoid a second competing container |
 | Neo4j authentication/connection error | Check running container, password, URI, and driver connectivity |

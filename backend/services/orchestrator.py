@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from neo4j.exceptions import AuthError, ServiceUnavailable, SessionExpired
 from backend.schemas.patient import PatientContext
 from backend.schemas.retrieval import OrchestratorResult, VectorRetrievalResult, GraphRetrievalResult
 from backend.services.graph_retriever import GraphRetriever
@@ -24,11 +24,20 @@ class RetrievalOrchestrator:
         Executes fan-out retrieval across Graph, Vector, Drug safety, and Web sources independently.
         """
         print("Orchestrator: Initiating Graph Retrieval...")
-        graph_results = self.graph_retriever.retrieve(context)
+        try:
+            graph_results = self.graph_retriever.retrieve(context)
+        except (AuthError, ServiceUnavailable, SessionExpired) as exc:
+            print(f"Graph retrieval unavailable: {type(exc).__name__}")
+            graph_results = GraphRetrievalResult(candidate_diseases=[], paths=[],
+                limitations=["Neo4j graph retrieval is unavailable. Check the database connection and credentials."])
         
         print("Orchestrator: Initiating Vector Retrieval...")
         vector_items = self.vector_retriever.retrieve(context)
         vector_results = VectorRetrievalResult(evidence_items=vector_items)
+        if getattr(self.vector_retriever, "last_error", None):
+            vector_results.limitations.append(
+                "Textbook retrieval is unavailable. Check the configured Qdrant collection and local encoder."
+            )
         source_passages, source_limitations = self.vector_retriever.retrieve_authoritative(context)
         
         print("Orchestrator: Initiating Drug Safety Retrieval...")

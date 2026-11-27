@@ -7,7 +7,7 @@ from pathlib import Path
 import pandas as pd
 from neo4j import GraphDatabase
 
-from backend.config import settings
+from backend.config import project_path, settings
 
 RELATIONS = {
     'disease_phenotype_positive': 'PHENOTYPE_SUPPORTS_DISEASE',
@@ -72,7 +72,7 @@ def populate(path, driver, *, chunk_size=100000, batch_size=2000):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--input', type=Path, default=Path(settings.KG_PATH))
+    parser.add_argument('--input', type=Path, default=project_path(settings.KG_PATH))
     parser.add_argument('--manifest', type=Path, required=True)
     args = parser.parse_args()
     if args.manifest.exists():

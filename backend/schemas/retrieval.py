@@ -16,6 +16,7 @@ class GraphRetrievalResult(BaseModel):
 
 class VectorRetrievalResult(BaseModel):
     evidence_items: List[Dict[str, Any]] = []
+    limitations: List[str] = Field(default_factory=list)
 
 class OrchestratorResult(BaseModel):
     graph_results: GraphRetrievalResult

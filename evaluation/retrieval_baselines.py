@@ -101,8 +101,7 @@ def main():
         vectors = encoder.encode([corpus[key] for key in keys], normalize_embeddings=True)
         if "dense_reranked" in args.methods:
             reranker = CrossEncoder(settings.VECTOR_RERANKER_MODEL, revision=settings.VECTOR_RERANKER_REVISION,
-                                   local_files_only=True, max_length=512,
-                                   cache_folder=str(Path(__file__).resolve().parents[1] / "datasets/models"))
+                                   local_files_only=True, max_length=512)
     records = []
     for query in queries:
         dense = None

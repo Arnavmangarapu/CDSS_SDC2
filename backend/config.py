@@ -1,6 +1,14 @@
 from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+
+def project_path(value: str) -> Path:
+    """Resolve repository-relative settings without depending on the launch directory."""
+    return PROJECT_ROOT / Path(value).expanduser()
+
+
 class Settings(BaseSettings):
     DATASETS_DIR: str = "datasets"
     HPO_PATH: str = "datasets/ontologies/hpo/hp.obo"
@@ -34,7 +42,7 @@ class Settings(BaseSettings):
     SERPER_API_KEY: str = ""
 
     model_config = SettingsConfigDict(
-        env_file=Path(__file__).resolve().parents[1] / ".env",
+        env_file=PROJECT_ROOT / ".env",
         extra="ignore",
     )
 

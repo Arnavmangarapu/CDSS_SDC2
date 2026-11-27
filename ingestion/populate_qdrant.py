@@ -5,10 +5,10 @@ import json
 import uuid
 from pathlib import Path
 
-from backend.config import settings
+from backend.config import project_path, settings
 
 ENCODER = settings.VECTOR_EMBEDDER_MODEL
-TEXTBOOKS = Path(__file__).resolve().parents[1] / 'datasets/literature/MedQA/MedQA-USMLE/textbooks/en'
+TEXTBOOKS = project_path(settings.MEDQA_DIR) / 'MedQA-USMLE/textbooks/en'
 
 
 def chunk_text(text, chunk_size=150, overlap=20):

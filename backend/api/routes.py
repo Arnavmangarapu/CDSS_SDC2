@@ -17,7 +17,7 @@ class AnalyzeRequest(BaseModel):
 def health_check():
     return {"status": "ok", "service": "CDSS Backend"}
 
-import os
+from backend.config import project_path, settings
 from backend.services.ontology_parser import OntologyParser
 from backend.services.entity_linker import EntityLinker
 from backend.agents.clarifier import ClinicalClarifier
@@ -42,23 +42,21 @@ def get_pipeline():
     if not pipeline_state:
         print("Initializing CDSS Pipeline Services...")
         
-        # Paths
-        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-        hpo_path = os.path.join(base_dir, "datasets", "ontologies", "hpo", "hp.obo")
-        mondo_path = os.path.join(base_dir, "datasets", "ontologies", "mondo", "mondo.obo")
-        kg_path = os.path.join(base_dir, "datasets", "kg.csv")
-        drugcentral_dir = os.path.join(base_dir, "datasets", "drugcentral")
-        drug_csv_path = os.path.join(drugcentral_dir, "structures.smiles.tsv")
+        hpo_path = project_path(settings.HPO_PATH)
+        mondo_path = project_path(settings.MONDO_PATH)
+        kg_path = project_path(settings.KG_PATH)
+        drugcentral_dir = project_path(settings.DRUGCENTRAL_DIR)
+        drug_csv_path = drugcentral_dir / "structures.smiles.tsv"
         
         # 1. Init Ontologies & Linker
-        parser = OntologyParser(hpo_path, mondo_path, drug_csv_path)
+        parser = OntologyParser(str(hpo_path), str(mondo_path), str(drug_csv_path))
         parser.parse_all()
         linker = EntityLinker(parser.lookup_table)
         
         # 2. Init Retrievers
-        graph_retriever = GraphRetriever(kg_path)
-        vector_retriever = VectorRetriever() # We assume it's unpopulated for now unless build_index is called
-        drug_service = DrugCentralService(drugcentral_dir)
+        graph_retriever = GraphRetriever(str(kg_path))
+        vector_retriever = VectorRetriever()
+        drug_service = DrugCentralService(str(drugcentral_dir))
         evidence_scanner = EvidenceScannerAgent()
         
         pipeline_state['clarifier'] = ClinicalClarifier(linker)
@@ -171,7 +169,8 @@ def analyze_case(request: AnalyzeRequest):
                      "Legacy confidence values are uncalibrated retry heuristics, not diagnostic probabilities."] + [
             f"Source retrieval unverified: {reason}"
             for reason in retrieval_results.source_retrieval_limitations
-        ] + verification.failures,
+        ] + retrieval_results.graph_results.limitations
+          + retrieval_results.vector_results.limitations + verification.failures,
         claims=verification.claims,
         source_passages=retrieval_results.source_passages,
         evidence_completeness=verification.evidence_completeness,

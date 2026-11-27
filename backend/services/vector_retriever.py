@@ -1,7 +1,6 @@
 from typing import List, Dict, Any
 import math
 import re
-from pathlib import Path
 from backend.schemas.patient import PatientContext
 from backend.config import settings
 from backend.schemas.evidence import SourcePassage
@@ -20,13 +19,12 @@ class VectorRetriever:
             self.is_ready = True
             self.reranker = None
             if settings.VECTOR_RERANKER_MODEL:
-                from sentence_transformers import CrossEncoder
                 try:
+                    from sentence_transformers import CrossEncoder
                     self.reranker = CrossEncoder(settings.VECTOR_RERANKER_MODEL, device="cpu",
                         revision=settings.VECTOR_RERANKER_REVISION,
-                        cache_folder=str(Path(__file__).resolve().parents[2] / "datasets/models"),
                         local_files_only=True, max_length=512)
-                except (OSError, ValueError):
+                except (ImportError, OSError, ValueError):
                     print("Cross-encoder unavailable locally; using dense ranking. Run ingestion.prepare_models.")
         except Exception as e:
             print(f"Failed to initialize VectorRetriever: {e}")

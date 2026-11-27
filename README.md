@@ -39,6 +39,27 @@ The verifier accepts only passages that match the pinned source manifest and loc
 
 ## Local setup
 
+Use a fresh virtual environment for each operating system. In the supplied workspace, run these commands from the inner `code` folder that contains `requirements.txt`.
+
+Windows PowerShell:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+if (!(Test-Path .env)) { Copy-Item .env.example .env }
+```
+
+Linux or WSL:
+
+```bash
+python3 -m venv .venv-linux
+source .venv-linux/bin/activate
+python -m pip install -r requirements.txt
+test -f .env || cp .env.example .env
+```
+
+The commands below use `python`. On Windows, substitute `.\.venv\Scripts\python.exe` or activate that environment first. Use repository-relative paths in a shared `.env` and run model preparation on each operating system.
+
 The 27 October improvement pass uses a `ClinicalEntity` graph schema with PrimeKG
 global node-index identifiers, complete selected textbooks in `medical_textbooks_v2`,
 and a revision-pinned local cross-encoder. See [the database checkpoint and rollback guide](DATABASE_CHECKPOINT.md)
@@ -47,29 +68,19 @@ their dated implementation; new measurements are saved separately.
 
 The repository contains code, a versioned source manifest, synthetic test cases, and the MedQA selection protocol. It **does not include** the large biomedical datasets, MedQA exam questions, Qdrant or Neo4j contents, or the raw NICE/DailyMed snapshots. You need the local inputs described in [datasets/DATASET_GUIDE.md](datasets/DATASET_GUIDE.md) to reproduce the full pipeline. Respect each source's reuse terms before obtaining or redistributing it.
 
-1. Clone and install dependencies (the current local evaluation used Python 3.14):
-
-   ```bash
-   git clone https://github.com/Arnavmangarapu/CDSS_SDC2.git
-   cd CDSS_SDC2
-   python -m venv .venv
-   source .venv/bin/activate
-   pip install -r requirements.txt
-   cp .env.example .env
-   ```
-
-   Put provider keys in the untracked `.env`. At least one configured LLM provider is recommended for useful synthesis. Without one, limited fallback extraction and graph-candidate output may still run. Never commit `.env` or real patient information.
+1. Put provider keys in the untracked `.env`. At least one configured LLM provider is recommended for useful synthesis. Without one, limited fallback extraction and graph-candidate output may still run. Never commit `.env` or real patient information.
 
 2. Place the HPO, MONDO, biomedical graph, DrugCentral, and textbook files at the paths in the [data guide](datasets/DATASET_GUIDE.md). Start the local services and index the graph/text data:
 
    ```bash
-   ./run_qdrant.sh
-   ./run_neo4j.sh
+   docker compose up -d
    python -m ingestion.populate_neo4j --manifest evaluation/runs/graph-build/manifest.json
    python -m ingestion.prepare_models
    python -m ingestion.populate_qdrant --manifest evaluation/runs/textbook-build/manifest.json
    ```
 
+   If you already have the helper containers named `neo4j` and `qdrant`, reuse them with
+   `docker start neo4j qdrant` in place of Compose. A running database can still be empty.
    The graph importer streams all rows and selects positive/negative phenotype–disease,
    drug contraindication and indication relations, deduplicating reverse edges. It uses
    the configured Neo4j connection and adds a separate schema without deleting legacy
